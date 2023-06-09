@@ -1,3 +1,12 @@
+use bevy::prelude::*;
+
 fn main() {
-    println!("Hello, world!");
+    App::new()
+        .add_startup_system(setup)
+        .add_plugins(DefaultPlugins)
+        .run();
+}
+
+fn setup(mut commands: Commands) {
+    commands.spawn(Camera2dBundle::default());
 }
