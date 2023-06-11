@@ -1,3 +1,6 @@
+pub(crate) mod board;
+pub(crate) mod mino;
+
 use bevy::prelude::*;
 
 fn main() {
