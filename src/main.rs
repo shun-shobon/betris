@@ -1,5 +1,7 @@
+pub mod block;
 pub mod board;
 pub mod mino;
+pub mod position;
 
 use bevy::{prelude::*, render::camera::ScalingMode};
 use board::Board;
