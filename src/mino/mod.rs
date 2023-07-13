@@ -3,8 +3,6 @@ mod shape;
 use crate::board::Position;
 use bevy::prelude::*;
 
-pub const MINO_SIZE: f32 = 25.0;
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Mino {
     pub shape: MinoShape,

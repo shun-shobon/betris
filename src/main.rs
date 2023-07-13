@@ -1,9 +1,8 @@
 pub mod board;
 pub mod mino;
 
-use bevy::prelude::*;
+use bevy::{prelude::*, render::camera::ScalingMode};
 use board::Board;
-use mino::MINO_SIZE;
 
 fn main() {
     App::new()
@@ -15,13 +14,15 @@ fn main() {
 }
 
 fn setup(mut commands: Commands) {
-    commands.spawn(Camera2dBundle::default());
+    let mut camera_bundle = Camera2dBundle::default();
+    camera_bundle.projection.scaling_mode = ScalingMode::FixedVertical(25.);
+    commands.spawn(camera_bundle);
 }
 
 fn setup_game(mut commands: Commands) {
     commands
         .spawn(SpriteBundle {
-            transform: Transform::from_translation(Vec3::new(-200.0, 300.0, 0.0)),
+            transform: Transform::from_translation(Vec3::new(-10.0, -10.0, 0.0)),
             ..default()
         })
         .insert(Board::default());
@@ -45,12 +46,12 @@ fn spawn_board_blocks(mut commands: Commands, board: Query<(Entity, &Board)>) {
             let block = commands
                 .spawn(SpriteBundle {
                     transform: Transform {
-                        translation: Vec3::new((x as f32) * MINO_SIZE, (y as f32) * MINO_SIZE, 0.0),
-                        scale: Vec3::new(MINO_SIZE, MINO_SIZE, 1.0),
+                        translation: Vec3::new(x as f32, y as f32, 0.0),
                         ..default()
                     },
                     sprite: Sprite {
                         color: color.to_color(),
+                        custom_size: Some(Vec2::new(1.0, 1.0)),
                         ..default()
                     },
                     ..default()
