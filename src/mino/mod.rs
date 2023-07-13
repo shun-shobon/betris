@@ -1,6 +1,9 @@
 mod shape;
 
 use crate::board::Position;
+use bevy::prelude::*;
+
+pub const MINO_SIZE: f32 = 25.0;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Mino {
@@ -60,4 +63,18 @@ pub enum MinoColor {
     S,
     T,
     Z,
+}
+
+impl MinoColor {
+    pub fn to_color(self) -> Color {
+        match self {
+            Self::I => Color::rgb(0.0, 1.0, 1.0),
+            Self::J => Color::rgb(0.0, 0.0, 1.0),
+            Self::L => Color::rgb(1.0, 0.5, 0.0),
+            Self::O => Color::rgb(1.0, 1.0, 0.0),
+            Self::S => Color::rgb(0.0, 1.0, 0.0),
+            Self::T => Color::rgb(0.5, 0.0, 1.0),
+            Self::Z => Color::rgb(1.0, 0.0, 0.0),
+        }
+    }
 }
