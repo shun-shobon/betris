@@ -1,6 +1,12 @@
-use crate::position::Position;
+use crate::{
+    field::{FIELD_HEIGHT, FIELD_WIDTH},
+    mino::MinoPosition,
+    position::Position,
+};
 use bevy::prelude::*;
+use if_chain::if_chain;
 
+pub const BLOCK_SIZE: f32 = 25.0;
 pub const BLOCK_INSET: i32 = 1;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Component)]
@@ -54,5 +60,27 @@ impl Block {
 
         self.position.x = old_y;
         self.position.y = 1 - (old_x - (size - 1) - 2);
+    }
+}
+
+pub fn block_transform_system(
+    mut query: Query<(&Block, &mut Transform, Option<&Parent>)>,
+    mino_pos_query: Query<&MinoPosition>,
+) {
+    for (block, mut transform, parent) in query.iter_mut() {
+        let mut pos = block.position;
+        if_chain! {
+            if let Some(parent) = parent;
+            if let Ok(MinoPosition(mino_pos)) = mino_pos_query.get(parent.get());
+            then {
+                pos += *mino_pos;
+            }
+        }
+
+        transform.translation = Vec3::new(
+            (pos.x - FIELD_WIDTH) as f32 * BLOCK_SIZE,
+            -(pos.y - FIELD_HEIGHT) as f32 * BLOCK_SIZE,
+            0.0,
+        );
     }
 }
