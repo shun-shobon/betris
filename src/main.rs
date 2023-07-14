@@ -3,6 +3,7 @@ pub mod field;
 pub mod mino;
 pub mod position;
 
+use crate::field::Field;
 use bevy::{
     diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin},
     prelude::*,
@@ -51,6 +52,22 @@ fn setup(mut commands: Commands) {
             }),
         )
         .insert(FpsText);
+
+    Field::spawn(&mut commands, 40., Vec3::new(-500., 0., 0.));
+
+    // for debug
+    commands.spawn(SpriteBundle {
+        transform: Transform {
+            translation: Vec3::new(0., 0., 0.),
+            scale: Vec3::new(25., 25., 1.),
+            ..default()
+        },
+        sprite: Sprite {
+            color: Color::rgb(1., 0., 0.),
+            ..default()
+        },
+        ..default()
+    });
 }
 
 fn fps_system(diagnostic: Res<DiagnosticsStore>, mut query: Query<&mut Text, With<FpsText>>) {
