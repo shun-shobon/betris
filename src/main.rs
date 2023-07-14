@@ -9,6 +9,7 @@ use bevy::{
     prelude::*,
     render::camera::ScalingMode,
 };
+use block::{block_transform_system, BLOCK_SIZE};
 
 #[derive(Component)]
 struct FpsText;
@@ -17,6 +18,7 @@ fn main() {
     App::new()
         .add_systems(Startup, setup)
         .add_systems(Update, fps_system)
+        .add_systems(PostUpdate, block_transform_system)
         .add_plugins(DefaultPlugins)
         .add_plugins(FrameTimeDiagnosticsPlugin)
         .run();
@@ -53,21 +55,7 @@ fn setup(mut commands: Commands) {
         )
         .insert(FpsText);
 
-    Field::spawn(&mut commands, 40., Vec3::new(-500., 0., 0.));
-
-    // for debug
-    commands.spawn(SpriteBundle {
-        transform: Transform {
-            translation: Vec3::new(0., 0., 0.),
-            scale: Vec3::new(25., 25., 1.),
-            ..default()
-        },
-        sprite: Sprite {
-            color: Color::rgb(1., 0., 0.),
-            ..default()
-        },
-        ..default()
-    });
+    Field::spawn(&mut commands, BLOCK_SIZE, Vec3::new(-500., 0., 0.));
 }
 
 fn fps_system(diagnostic: Res<DiagnosticsStore>, mut query: Query<&mut Text, With<FpsText>>) {

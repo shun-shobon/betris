@@ -6,7 +6,7 @@ use crate::{
 use bevy::prelude::*;
 use if_chain::if_chain;
 
-pub const BLOCK_SIZE: f32 = 25.0;
+pub const BLOCK_SIZE: f32 = 40.0;
 pub const BLOCK_INSET: i32 = 1;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Component)]
@@ -15,7 +15,7 @@ pub struct Block {
 }
 
 macro_rules! spwan_block {
-    ($commands:tt, $color:tt, $size:tt, $position:tt) => {{
+    ($commands:tt, $color:tt, $size:tt, $position:tt) => {
         $commands
             .spawn(SpriteBundle {
                 sprite: Sprite {
@@ -30,12 +30,13 @@ macro_rules! spwan_block {
             })
             .insert(Block {
                 position: $position,
-            });
-    }};
+            })
+            .id()
+    };
 }
 
 impl Block {
-    pub fn spawn(commands: &mut Commands, color: Color, size: f32, position: Position) {
+    pub fn spawn(commands: &mut Commands, color: Color, size: f32, position: Position) -> Entity {
         spwan_block!(commands, color, size, position)
     }
 
@@ -44,7 +45,7 @@ impl Block {
         color: Color,
         size: f32,
         position: Position,
-    ) {
+    ) -> Entity {
         spwan_block!(parent, color, size, position)
     }
 
@@ -78,8 +79,8 @@ pub fn block_transform_system(
         }
 
         transform.translation = Vec3::new(
-            (pos.x - FIELD_WIDTH) as f32 * BLOCK_SIZE,
-            -(pos.y - FIELD_HEIGHT) as f32 * BLOCK_SIZE,
+            (pos.x as f32 - FIELD_WIDTH as f32 / 2.) as f32 * BLOCK_SIZE + BLOCK_SIZE / 2.,
+            -(pos.y as f32 - FIELD_HEIGHT as f32 / 2.) as f32 * BLOCK_SIZE - BLOCK_SIZE / 2.,
             0.0,
         );
     }

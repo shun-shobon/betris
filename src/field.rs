@@ -11,7 +11,7 @@ pub struct Field {
 }
 
 impl Field {
-    pub fn spawn(commands: &mut Commands, block_size: f32, translation: Vec3) {
+    pub fn spawn(commands: &mut Commands, block_size: f32, translation: Vec3) -> Entity {
         commands
             .spawn(SpriteBundle {
                 transform: Transform {
@@ -62,6 +62,7 @@ impl Field {
                         ..default()
                     });
                 }
-            });
+            })
+            .id()
     }
 }
