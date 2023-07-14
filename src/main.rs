@@ -11,11 +11,19 @@ use bevy::{
 };
 use block::{block_transform_system, BLOCK_SIZE};
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, States)]
+enum GameState {
+    #[default]
+    MatchMaking,
+    Playing,
+}
+
 #[derive(Component)]
 struct FpsText;
 
 fn main() {
     App::new()
+        .add_state::<GameState>()
         .add_systems(Startup, setup)
         .add_systems(Update, fps_system)
         .add_systems(PostUpdate, block_transform_system)
