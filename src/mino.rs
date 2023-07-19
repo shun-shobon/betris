@@ -9,7 +9,27 @@ type MinoBlocks = [Position; 4];
 #[derive(Debug, Clone, Copy, Component)]
 pub struct Mino {
     blocks: MinoBlocks,
-    mino_type: MinoType,
+}
+
+impl Mino {
+    pub fn spawn(commands: &mut Commands, mino_type: MinoType, block_size: f32) -> Entity {
+        let mino = Mino {
+            blocks: mino_type.blocks(),
+        };
+
+        commands
+            .spawn(SpatialBundle::default())
+            .insert((
+                mino,
+                MinoPosition(Position::new((FIELD_WIDTH - mino_type.size()) / 2, 0)),
+            ))
+            .with_children(|parent| {
+                for &block_pos in mino.blocks.iter() {
+                    Block::spwan_with_parent(parent, mino_type.color(), block_size, block_pos);
+                }
+            })
+            .id()
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -90,22 +110,4 @@ impl MinoType {
             ],
         }
     }
-}
-
-pub fn spawn_mino(commands: &mut Commands, mino_type: MinoType, block_size: f32) {
-    let mino = Mino {
-        blocks: mino_type.blocks(),
-        mino_type,
-    };
-
-    commands
-        .spawn((
-            mino,
-            MinoPosition(Position::new((FIELD_WIDTH - mino_type.size()) / 2, 0)),
-        ))
-        .with_children(|parent| {
-            for &block_pos in mino.blocks.iter() {
-                Block::spwan_with_parent(parent, mino_type.color(), block_size, block_pos);
-            }
-        });
 }
