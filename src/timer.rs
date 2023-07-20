@@ -1,5 +1,8 @@
-use super::{event::PlaceMinoEvent, Mino};
-use crate::movement::{Direction, MoveEvent};
+use crate::{
+    field::Field,
+    mino::event::PlaceMinoEvent,
+    movement::{Direction, MoveEvent},
+};
 use bevy::prelude::*;
 use std::time::Duration;
 
@@ -32,16 +35,16 @@ impl Default for LockDownTimer {
 
 pub fn mino_timer_system(
     time: Res<Time>,
-    mut mino_query: Query<(&mut DropTimer, &mut LockDownTimer, &Parent), With<Mino>>,
+    mut timer_query: Query<(Entity, &mut DropTimer, &mut LockDownTimer), With<Field>>,
     mut move_event_writer: EventWriter<MoveEvent>,
     mut place_mino_event_writer: EventWriter<PlaceMinoEvent>,
 ) {
-    for (mut drop_timer, mut lock_down_timer, field_entity) in mino_query.iter_mut() {
+    for (field_entity, mut drop_timer, mut lock_down_timer) in timer_query.iter_mut() {
         if drop_timer.0.tick(time.delta()).just_finished() {
-            move_event_writer.send(MoveEvent::Move(field_entity.get(), Direction::Down));
+            move_event_writer.send(MoveEvent::Move(field_entity, Direction::Down));
         }
         if lock_down_timer.0.tick(time.delta()).just_finished() {
-            place_mino_event_writer.send(PlaceMinoEvent(field_entity.get()));
+            place_mino_event_writer.send(PlaceMinoEvent(field_entity));
         }
     }
 }

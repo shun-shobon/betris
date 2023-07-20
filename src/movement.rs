@@ -2,12 +2,10 @@ use bevy::prelude::*;
 
 use crate::{
     block::Block,
-    field::{FIELD_HEIGHT, FIELD_WIDTH},
-    mino::{
-        timer::{DropTimer, LockDownTimer, DROP_INTERVAL, SOFT_DROP_INTERVAL},
-        Mino, MinoPosition,
-    },
+    field::{Field, FIELD_HEIGHT, FIELD_WIDTH},
+    mino::{Mino, MinoPosition},
     position::Position,
+    timer::{DropTimer, LockDownTimer, DROP_INTERVAL, SOFT_DROP_INTERVAL},
 };
 
 #[derive(Debug, Event)]
@@ -26,22 +24,15 @@ pub enum Direction {
 
 pub fn handle_move_event(
     mut move_events: EventReader<MoveEvent>,
-    mut mino_query: Query<
-        (
-            &mut MinoPosition,
-            &mut DropTimer,
-            &mut LockDownTimer,
-            &Children,
-            &Parent,
-        ),
-        With<Mino>,
-    >,
+    mut mino_query: Query<(&mut MinoPosition, &Children, &Parent), With<Mino>>,
+    mut field_query: Query<(&mut DropTimer, &mut LockDownTimer), With<Field>>,
     blocks_query: Query<(&Block, &Parent)>,
 ) {
     for event in move_events.iter() {
         match event {
             MoveEvent::Move(field_entity, direction) => {
-                let Some((mut mino_pos, _, mut lock_down_timer, mino_block_entities, _)) = mino_query.iter_mut().find(|(_, _, _, _, parent)| parent.get() == *field_entity) else { continue; };
+                let Some((mut mino_pos, mino_block_entities, _)) = mino_query.iter_mut().find(|(_, _, parent)| parent.get() == *field_entity) else { continue; };
+                let Ok((_, mut lock_down_timer)) = field_query.get_mut(*field_entity) else { continue; };
                 let field_blocks = blocks_query
                     .iter()
                     .filter(|(_, parent)| parent.get() == *field_entity)
@@ -80,11 +71,11 @@ pub fn handle_move_event(
                 }
             }
             MoveEvent::StartSoftDrop(field_entity) => {
-                let Some((_, mut drop_timer, _, _, _)) = mino_query.iter_mut().find(|(_, _, _, _, parent)| parent.get() == *field_entity) else { continue; };
+                let Ok((mut drop_timer, _)) = field_query.get_mut(*field_entity) else { continue; };
                 drop_timer.0.set_duration(SOFT_DROP_INTERVAL);
             }
             MoveEvent::StopSoftDrop(field_entity) => {
-                let Some((_, mut drop_timer, _, _, _)) = mino_query.iter_mut().find(|(_, _, _, _, parent)| parent.get() == *field_entity) else { continue; };
+                let Ok((mut drop_timer, _)) = field_query.get_mut(*field_entity) else { continue; };
                 drop_timer.0.set_duration(DROP_INTERVAL);
             }
         }

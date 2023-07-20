@@ -4,6 +4,7 @@ pub mod input;
 pub mod mino;
 pub mod movement;
 pub mod position;
+pub mod timer;
 
 use crate::field::Field;
 use bevy::{
@@ -13,11 +14,9 @@ use bevy::{
 };
 use block::{block_transform_system, BLOCK_SIZE};
 use input::keyboard_input_system;
-use mino::{
-    event::{handle_place_mino, handle_spwan_mino, PlaceMinoEvent, SpwanMinoEvent},
-    timer::mino_timer_system,
-};
+use mino::event::{handle_place_mino, handle_spwan_mino, PlaceMinoEvent, SpwanMinoEvent};
 use movement::{handle_move_event, MoveEvent};
+use timer::mino_timer_system;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, States)]
 enum GameState {

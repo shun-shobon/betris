@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 
+use crate::timer::{DropTimer, LockDownTimer};
+
 pub const FIELD_WIDTH: i32 = 10;
 pub const FIELD_HEIGHT: i32 = 20;
 
@@ -14,10 +16,12 @@ pub struct Field {
 impl Field {
     pub fn spawn(commands: &mut Commands, block_size: f32, translation: Vec3) -> Entity {
         commands
-            .spawn(SpatialBundle::from_transform(Transform::from_translation(
-                translation,
-            )))
-            .insert(Field { id: 0, block_size })
+            .spawn((
+                SpatialBundle::from_transform(Transform::from_translation(translation)),
+                Field { id: 0, block_size },
+                DropTimer::default(),
+                LockDownTimer::default(),
+            ))
             .with_children(|parent| {
                 let width = FIELD_WIDTH as f32 * block_size;
                 let height = FIELD_HEIGHT as f32 * block_size;

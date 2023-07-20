@@ -1,11 +1,7 @@
 pub mod event;
 pub mod shape;
-pub mod timer;
 
-use self::{
-    shape::MinoShape,
-    timer::{DropTimer, LockDownTimer},
-};
+use self::shape::MinoShape;
 use crate::{block::Block, field::FIELD_WIDTH, position::Position};
 use bevy::prelude::*;
 
@@ -22,8 +18,6 @@ impl Mino {
             .insert((
                 Mino,
                 MinoPosition(Position::new((FIELD_WIDTH - shape.size()) / 2, 0)),
-                DropTimer::default(),
-                LockDownTimer::default(),
             ))
             .with_children(|parent| {
                 for &block_pos in shape.blocks().iter() {
