@@ -11,6 +11,9 @@ pub struct Mino {
     blocks: MinoBlocks,
 }
 
+#[derive(Component)]
+pub struct DropTimer(pub Timer);
+
 impl Mino {
     pub fn spawn(commands: &mut Commands, mino_type: MinoType, block_size: f32) -> Entity {
         let mino = Mino {
@@ -22,6 +25,7 @@ impl Mino {
             .insert((
                 mino,
                 MinoPosition(Position::new((FIELD_WIDTH - mino_type.size()) / 2, 0)),
+                DropTimer(Timer::from_seconds(1.0, TimerMode::Repeating)),
             ))
             .with_children(|parent| {
                 for &block_pos in mino.blocks.iter() {
@@ -29,6 +33,17 @@ impl Mino {
                 }
             })
             .id()
+    }
+}
+
+pub fn drop_mino_system(
+    time: Res<Time>,
+    mut mino_query: Query<(&mut MinoPosition, &mut DropTimer), With<Mino>>,
+) {
+    for (mut mino_pos, mut drop_timer) in mino_query.iter_mut() {
+        if drop_timer.0.tick(time.delta()).just_finished() {
+            mino_pos.0.y += 1;
+        }
     }
 }
 
