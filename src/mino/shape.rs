@@ -1,8 +1,5 @@
-use bevy::prelude::*;
-
 use crate::position::Position;
-
-use super::MinoBlocks;
+use bevy::prelude::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MinoShape {
@@ -36,50 +33,58 @@ impl MinoShape {
         }
     }
 
-    pub fn blocks(&self) -> MinoBlocks {
+    pub fn blocks(&self) -> &[Position] {
         match self {
-            MinoShape::I => [
-                Position::new(0, 1),
-                Position::new(1, 1),
-                Position::new(2, 1),
-                Position::new(3, 1),
-            ],
-            MinoShape::J => [
-                Position::new(0, 0),
-                Position::new(0, 1),
-                Position::new(1, 1),
-                Position::new(2, 1),
-            ],
-            MinoShape::L => [
-                Position::new(2, 0),
-                Position::new(0, 1),
-                Position::new(1, 1),
-                Position::new(2, 1),
-            ],
-            MinoShape::O => [
-                Position::new(0, 0),
-                Position::new(1, 0),
-                Position::new(0, 1),
-                Position::new(1, 1),
-            ],
-            MinoShape::S => [
-                Position::new(1, 0),
-                Position::new(2, 0),
-                Position::new(0, 1),
-                Position::new(1, 1),
-            ],
-            MinoShape::T => [
-                Position::new(1, 0),
-                Position::new(0, 1),
-                Position::new(1, 1),
-                Position::new(2, 1),
-            ],
-            MinoShape::Z => [
-                Position::new(0, 0),
-                Position::new(1, 0),
-                Position::new(1, 1),
-                Position::new(2, 1),
-            ],
+            MinoShape::I => I_SHAPE,
+            MinoShape::J => J_SHAPE,
+            MinoShape::L => L_SHAPE,
+            MinoShape::O => O_SHAPE,
+            MinoShape::S => S_SHAPE,
+            MinoShape::T => T_SHAPE,
+            MinoShape::Z => Z_SHAPE,
         }
     }
 }
+
+static I_SHAPE: &[Position] = &[
+    Position::new(0, 1),
+    Position::new(1, 1),
+    Position::new(2, 1),
+    Position::new(3, 1),
+];
+static J_SHAPE: &[Position] = &[
+    Position::new(0, 0),
+    Position::new(0, 1),
+    Position::new(1, 1),
+    Position::new(2, 1),
+];
+static L_SHAPE: &[Position] = &[
+    Position::new(2, 0),
+    Position::new(0, 1),
+    Position::new(1, 1),
+    Position::new(2, 1),
+];
+static O_SHAPE: &[Position] = &[
+    Position::new(0, 0),
+    Position::new(1, 0),
+    Position::new(0, 1),
+    Position::new(1, 1),
+];
+static S_SHAPE: &[Position] = &[
+    Position::new(1, 0),
+    Position::new(2, 0),
+    Position::new(0, 1),
+    Position::new(1, 1),
+];
+static T_SHAPE: &[Position] = &[
+    Position::new(1, 0),
+    Position::new(0, 1),
+    Position::new(1, 1),
+    Position::new(2, 1),
+];
+static Z_SHAPE: &[Position] = &[
+    Position::new(0, 0),
+    Position::new(1, 0),
+    Position::new(1, 1),
+    Position::new(2, 1),
+];

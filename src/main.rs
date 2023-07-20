@@ -14,7 +14,7 @@ use bevy::{
 use block::{block_transform_system, BLOCK_SIZE};
 use input::keyboard_input_system;
 use mino::{
-    event::{handle_spwan_mino, SpwanMinoEvent},
+    event::{handle_place_mino, handle_spwan_mino, PlaceMinoEvent, SpwanMinoEvent},
     timer::mino_timer_system,
 };
 use movement::{handle_move_event, MoveEvent};
@@ -33,10 +33,14 @@ fn main() {
     App::new()
         .add_state::<GameState>()
         .add_event::<SpwanMinoEvent>()
+        .add_event::<PlaceMinoEvent>()
         .add_event::<MoveEvent>()
         .insert_resource(input::KeyboardRepeatTimer::default())
-        .add_systems(Startup, setup.pipe(debug))
-        .add_systems(Update, (handle_spwan_mino, handle_move_event))
+        .add_systems(Startup, setup)
+        .add_systems(
+            Update,
+            (handle_move_event, handle_spwan_mino, handle_place_mino),
+        )
         .add_systems(Update, mino_timer_system)
         .add_systems(Update, keyboard_input_system)
         .add_systems(Update, fps_system)
@@ -46,7 +50,7 @@ fn main() {
         .run();
 }
 
-fn setup(mut commands: Commands) {
+fn setup(mut commands: Commands, mut mino_events: EventWriter<SpwanMinoEvent>) {
     let mut camera_bundle = Camera2dBundle::default();
     camera_bundle.projection.scaling_mode = ScalingMode::FixedVertical(1000.);
     commands.spawn(camera_bundle);
@@ -77,11 +81,8 @@ fn setup(mut commands: Commands) {
         )
         .insert(FpsText);
 
-    Field::spawn(&mut commands, BLOCK_SIZE, Vec3::new(-500., 0., 0.));
-}
-
-fn debug(mut spawn_mino_writer: EventWriter<SpwanMinoEvent>) {
-    spawn_mino_writer.send(SpwanMinoEvent(0));
+    let field_entity = Field::spawn(&mut commands, BLOCK_SIZE, Vec3::new(-500., 0., 0.));
+    mino_events.send(SpwanMinoEvent(field_entity));
 }
 
 fn fps_system(diagnostic: Res<DiagnosticsStore>, mut query: Query<&mut Text, With<FpsText>>) {
