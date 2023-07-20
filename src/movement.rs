@@ -47,6 +47,7 @@ pub fn handle_move_event(
 
         if !collision {
             mino_pos.0 += delta;
+            lock_down_timer.0.pause();
         }
 
         let is_landed = is_collision(
