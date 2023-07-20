@@ -1,6 +1,7 @@
 pub mod block;
 pub mod field;
 pub mod mino;
+pub mod movement;
 pub mod position;
 
 use crate::field::Field;
@@ -12,6 +13,7 @@ use bevy::{
 use block::{block_transform_system, BLOCK_SIZE};
 use field::{handle_spwan_mino, SpwanMinoEvent};
 use mino::drop_mino_system;
+use movement::{handle_move_event, MoveEvent};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, States)]
 enum GameState {
@@ -27,8 +29,9 @@ fn main() {
     App::new()
         .add_state::<GameState>()
         .add_event::<SpwanMinoEvent>()
+        .add_event::<MoveEvent>()
         .add_systems(Startup, setup.pipe(debug))
-        .add_systems(Update, handle_spwan_mino)
+        .add_systems(Update, (handle_spwan_mino, handle_move_event))
         .add_systems(Update, drop_mino_system)
         .add_systems(Update, fps_system)
         .add_systems(PostUpdate, block_transform_system)

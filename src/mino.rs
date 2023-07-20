@@ -1,4 +1,9 @@
-use crate::{block::Block, field::FIELD_WIDTH, position::Position};
+use crate::{
+    block::Block,
+    field::FIELD_WIDTH,
+    movement::{Direction, MoveEvent},
+    position::Position,
+};
 use bevy::prelude::*;
 
 #[derive(Debug, Clone, Copy, Component)]
@@ -38,11 +43,12 @@ impl Mino {
 
 pub fn drop_mino_system(
     time: Res<Time>,
-    mut mino_query: Query<(&mut MinoPosition, &mut DropTimer), With<Mino>>,
+    mut mino_query: Query<(&mut DropTimer, &Parent), With<Mino>>,
+    mut move_event_writer: EventWriter<MoveEvent>,
 ) {
-    for (mut mino_pos, mut drop_timer) in mino_query.iter_mut() {
+    for (mut drop_timer, field_entity) in mino_query.iter_mut() {
         if drop_timer.0.tick(time.delta()).just_finished() {
-            mino_pos.0.y += 1;
+            move_event_writer.send(MoveEvent(field_entity.get(), Direction::Down));
         }
     }
 }
