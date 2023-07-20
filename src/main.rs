@@ -12,9 +12,11 @@ use bevy::{
     render::camera::ScalingMode,
 };
 use block::{block_transform_system, BLOCK_SIZE};
-use field::{handle_spwan_mino, SpwanMinoEvent};
 use input::keyboard_input_system;
-use mino::mino_timer_system;
+use mino::{
+    event::{handle_spwan_mino, SpwanMinoEvent},
+    timer::mino_timer_system,
+};
 use movement::{handle_move_event, MoveEvent};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, States)]
