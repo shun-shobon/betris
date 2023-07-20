@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::mino::{Mino, MinoType};
+use crate::mino::{shape::MinoShape, Mino};
 
 pub const FIELD_WIDTH: i32 = 10;
 pub const FIELD_HEIGHT: i32 = 20;
@@ -77,7 +77,7 @@ pub fn handle_spwan_mino(
     for SpwanMinoEvent(id) in spwan_mino_events.iter() {
         let Some((field_entity, field)) = field_query.iter().find(|(_, field)| field.id == *id) else { continue; };
 
-        let mino_type = MinoType::T;
+        let mino_type = MinoShape::T;
 
         let mino_entity = Mino::spawn(&mut commands, mino_type, field.block_size);
         commands.entity(field_entity).push_children(&[mino_entity]);

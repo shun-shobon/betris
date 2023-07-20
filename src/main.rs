@@ -14,7 +14,7 @@ use bevy::{
 use block::{block_transform_system, BLOCK_SIZE};
 use field::{handle_spwan_mino, SpwanMinoEvent};
 use input::keyboard_input_system;
-use mino::drop_mino_system;
+use mino::mino_timer_system;
 use movement::{handle_move_event, MoveEvent};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, States)]
@@ -35,7 +35,7 @@ fn main() {
         .insert_resource(input::KeyboardRepeatTimer::default())
         .add_systems(Startup, setup.pipe(debug))
         .add_systems(Update, (handle_spwan_mino, handle_move_event))
-        .add_systems(Update, drop_mino_system)
+        .add_systems(Update, mino_timer_system)
         .add_systems(Update, keyboard_input_system)
         .add_systems(Update, fps_system)
         .add_systems(PostUpdate, block_transform_system)

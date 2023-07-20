@@ -7,8 +7,8 @@ use crate::{
     movement::{Direction, MoveEvent},
 };
 
-const MOVE_REPLEAT_DELAY: Duration = Duration::from_millis(250);
-const MOVE_REPLEAT_INTERVAL: Duration = Duration::from_millis(10);
+const MOVE_REPLEAT_DELAY: Duration = Duration::from_millis(300);
+const MOVE_REPLEAT_INTERVAL: Duration = Duration::from_millis(50);
 
 #[derive(Resource)]
 pub struct KeyboardRepeatTimer(Timer);
