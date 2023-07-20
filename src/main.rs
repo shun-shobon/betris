@@ -1,5 +1,6 @@
 pub mod block;
 pub mod field;
+pub mod input;
 pub mod mino;
 pub mod movement;
 pub mod position;
@@ -12,6 +13,7 @@ use bevy::{
 };
 use block::{block_transform_system, BLOCK_SIZE};
 use field::{handle_spwan_mino, SpwanMinoEvent};
+use input::keyboard_input_system;
 use mino::drop_mino_system;
 use movement::{handle_move_event, MoveEvent};
 
@@ -30,9 +32,11 @@ fn main() {
         .add_state::<GameState>()
         .add_event::<SpwanMinoEvent>()
         .add_event::<MoveEvent>()
+        .insert_resource(input::KeyboardRepeatTimer::default())
         .add_systems(Startup, setup.pipe(debug))
         .add_systems(Update, (handle_spwan_mino, handle_move_event))
         .add_systems(Update, drop_mino_system)
+        .add_systems(Update, keyboard_input_system)
         .add_systems(Update, fps_system)
         .add_systems(PostUpdate, block_transform_system)
         .add_plugins(DefaultPlugins)
