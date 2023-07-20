@@ -2,7 +2,11 @@ pub mod event;
 pub mod shape;
 
 use self::shape::MinoShape;
-use crate::{block::Block, field::FIELD_WIDTH, position::Position};
+use crate::{
+    block::Block,
+    field::{FIELD_HEIGHT, FIELD_WIDTH},
+    position::Position,
+};
 use bevy::prelude::*;
 
 #[derive(Debug, Clone, Copy, Component)]
@@ -17,7 +21,10 @@ impl Mino {
             .spawn(SpatialBundle::default())
             .insert((
                 Mino,
-                MinoPosition(Position::new((FIELD_WIDTH - shape.size()) / 2, 0)),
+                MinoPosition(Position::new(
+                    (FIELD_WIDTH - shape.size()) / 2,
+                    FIELD_HEIGHT - 2, // TODO: 20行目が埋まっている場合は21行目に出現させる
+                )),
             ))
             .with_children(|parent| {
                 for &block_pos in shape.blocks().iter() {

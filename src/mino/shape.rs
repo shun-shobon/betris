@@ -47,19 +47,19 @@ impl MinoShape {
 }
 
 static I_SHAPE: &[Position] = &[
-    Position::new(0, 1),
-    Position::new(1, 1),
-    Position::new(2, 1),
-    Position::new(3, 1),
+    Position::new(0, 2),
+    Position::new(1, 2),
+    Position::new(2, 2),
+    Position::new(3, 2),
 ];
 static J_SHAPE: &[Position] = &[
-    Position::new(0, 0),
+    Position::new(0, 2),
     Position::new(0, 1),
     Position::new(1, 1),
     Position::new(2, 1),
 ];
 static L_SHAPE: &[Position] = &[
-    Position::new(2, 0),
+    Position::new(2, 2),
     Position::new(0, 1),
     Position::new(1, 1),
     Position::new(2, 1),
@@ -71,20 +71,20 @@ static O_SHAPE: &[Position] = &[
     Position::new(1, 1),
 ];
 static S_SHAPE: &[Position] = &[
-    Position::new(1, 0),
-    Position::new(2, 0),
+    Position::new(1, 2),
+    Position::new(2, 2),
     Position::new(0, 1),
     Position::new(1, 1),
 ];
 static T_SHAPE: &[Position] = &[
-    Position::new(1, 0),
+    Position::new(1, 2),
     Position::new(0, 1),
     Position::new(1, 1),
     Position::new(2, 1),
 ];
 static Z_SHAPE: &[Position] = &[
-    Position::new(0, 0),
-    Position::new(1, 0),
+    Position::new(0, 2),
+    Position::new(1, 2),
     Position::new(1, 1),
     Position::new(2, 1),
 ];

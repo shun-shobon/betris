@@ -50,6 +50,7 @@ impl Block {
     }
 
     // Based on https://stackoverflow.com/a/1996601
+    // TODO: Y軸反転させたので直す (回転方向を逆にすれば良さそう？)
     pub fn rotate_right(&mut self, size: i32) {
         let Position { x: old_x, y: old_y } = self.position;
 
@@ -80,7 +81,7 @@ pub fn block_transform_system(
 
         transform.translation = Vec3::new(
             (pos.x as f32 - FIELD_WIDTH as f32 / 2.) as f32 * BLOCK_SIZE + BLOCK_SIZE / 2.,
-            -(pos.y as f32 - FIELD_HEIGHT as f32 / 2.) as f32 * BLOCK_SIZE - BLOCK_SIZE / 2.,
+            (pos.y as f32 - FIELD_HEIGHT as f32 / 2.) as f32 * BLOCK_SIZE + BLOCK_SIZE / 2.,
             0.0,
         );
     }

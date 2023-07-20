@@ -27,7 +27,7 @@ impl Default for DropTimer {
 
 impl Default for LockDownTimer {
     fn default() -> Self {
-        let mut timer = Timer::from_seconds(LOCK_DOWN_INTERVAL.as_secs_f32(), TimerMode::Repeating);
+        let mut timer = Timer::from_seconds(LOCK_DOWN_INTERVAL.as_secs_f32(), TimerMode::Once);
         timer.pause();
         Self(timer)
     }
