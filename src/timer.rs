@@ -33,7 +33,7 @@ impl Default for LockDownTimer {
     }
 }
 
-pub fn mino_timer_system(
+pub fn timer_system(
     time: Res<Time>,
     mut timer_query: Query<(Entity, &mut DropTimer, &mut LockDownTimer), With<Field>>,
     mut move_event_writer: EventWriter<MoveEvent>,
