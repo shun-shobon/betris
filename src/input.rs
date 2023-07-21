@@ -2,10 +2,7 @@ use std::time::Duration;
 
 use bevy::prelude::*;
 
-use crate::{
-    field::Field,
-    movement::{Direction, MoveEvent},
-};
+use crate::movement::{Direction, MoveEvent};
 
 const MOVE_REPLEAT_DELAY: Duration = Duration::from_millis(300);
 const MOVE_REPLEAT_INTERVAL: Duration = Duration::from_millis(50);
@@ -27,21 +24,18 @@ pub fn keyboard_input_system(
     time: Res<Time>,
     mut repeat_timer: ResMut<KeyboardRepeatTimer>,
     mut move_event_writer: EventWriter<MoveEvent>,
-    field_query: Query<(Entity, &Field)>,
 ) {
-    let Some(field_entity) = field_query.iter().find(|(_, field)| field.id == 0).map(|(entity, _)| entity) else { return; };
-
     if keyboard_input.just_pressed(KeyCode::Left) {
         repeat_timer.0.set_duration(MOVE_REPLEAT_DELAY);
         repeat_timer.0.reset();
 
-        move_event_writer.send(MoveEvent::Move(field_entity, Direction::Left));
+        move_event_writer.send(MoveEvent::Move(Direction::Left));
     }
     if keyboard_input.just_pressed(KeyCode::Right) {
         repeat_timer.0.set_duration(MOVE_REPLEAT_DELAY);
         repeat_timer.0.reset();
 
-        move_event_writer.send(MoveEvent::Move(field_entity, Direction::Right));
+        move_event_writer.send(MoveEvent::Move(Direction::Right));
     }
 
     if !repeat_timer.0.finished() {
@@ -51,16 +45,16 @@ pub fn keyboard_input_system(
         repeat_timer.0.reset();
 
         if keyboard_input.pressed(KeyCode::Left) {
-            move_event_writer.send(MoveEvent::Move(field_entity, Direction::Left));
+            move_event_writer.send(MoveEvent::Move(Direction::Left));
         }
         if keyboard_input.pressed(KeyCode::Right) {
-            move_event_writer.send(MoveEvent::Move(field_entity, Direction::Right));
+            move_event_writer.send(MoveEvent::Move(Direction::Right));
         }
     }
 
     if keyboard_input.just_pressed(KeyCode::Down) {
-        move_event_writer.send(MoveEvent::StartSoftDrop(field_entity));
+        move_event_writer.send(MoveEvent::StartSoftDrop);
     } else if keyboard_input.just_released(KeyCode::Down) {
-        move_event_writer.send(MoveEvent::StopSoftDrop(field_entity));
+        move_event_writer.send(MoveEvent::StopSoftDrop);
     }
 }

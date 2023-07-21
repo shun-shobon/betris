@@ -2,18 +2,18 @@ use bevy::prelude::*;
 
 use crate::{
     block::Block,
-    field::{Field, FIELD_WIDTH},
+    field::{Field, LocalField, FIELD_WIDTH},
     mino::{Angle, Mino, MinoPosition},
     position::Position,
-    timer::{DropTimer, LockDownTimer, DROP_INTERVAL, SOFT_DROP_INTERVAL},
+    timer::{DROP_INTERVAL, SOFT_DROP_INTERVAL},
 };
 
 #[derive(Debug, Event)]
 pub enum MoveEvent {
-    Move(Entity, Direction),
-    Rotate(Entity, Direction),
-    StartSoftDrop(Entity),
-    StopSoftDrop(Entity),
+    Move(Direction),
+    Rotate(Direction),
+    StartSoftDrop,
+    StopSoftDrop,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -35,18 +35,18 @@ impl Direction {
 
 pub fn handle_move_event(
     mut move_events: EventReader<MoveEvent>,
-    mut mino_query: Query<(&mut Mino, &mut MinoPosition, &Children, &Parent)>,
-    mut field_query: Query<(&mut DropTimer, &mut LockDownTimer), With<Field>>,
+    mut mino_query: Query<(&mut Mino, &mut MinoPosition, &Children)>,
+    mut field_query: Query<(Entity, &mut LocalField), With<Field>>,
     blocks_query: Query<(&Block, &Parent)>,
 ) {
     for event in move_events.iter() {
         match event {
-            MoveEvent::Move(field_entity, direction) => {
-                let Some((_, mut mino_pos, mino_block_entities, _)) = mino_query.iter_mut().find(|(_, _, _, parent)| parent.get() == *field_entity) else { continue; };
-                let Ok((mut drop_timer, mut lock_down_timer)) = field_query.get_mut(*field_entity) else { continue; };
+            MoveEvent::Move(direction) => {
+                let Ok((_, mut mino_pos, mino_block_entities )) = mino_query.get_single_mut() else { continue; };
+                let Ok((field_entity, mut local_field)) = field_query.get_single_mut() else { continue; };
                 let field_blocks = blocks_query
                     .iter()
-                    .filter(|(_, parent)| parent.get() == *field_entity)
+                    .filter(|(_, parent)| parent.get() == field_entity)
                     .map(|(block, _)| block.position)
                     .collect::<Vec<_>>();
 
@@ -60,8 +60,8 @@ pub fn handle_move_event(
 
                 if !collision {
                     mino_pos.0 += direction.move_delta();
-                    lock_down_timer.0.reset();
-                    lock_down_timer.0.pause();
+                    local_field.lock_down_timer.reset();
+                    local_field.lock_down_timer.pause();
                 }
 
                 let is_landed = is_collision(
@@ -72,20 +72,20 @@ pub fn handle_move_event(
                     &field_blocks,
                 );
                 if is_landed {
-                    drop_timer.0.reset();
-                    lock_down_timer.0.unpause();
+                    local_field.drop_timer.reset();
+                    local_field.lock_down_timer.unpause();
                 }
             }
-            MoveEvent::Rotate(field_entity, direction) => {
+            MoveEvent::Rotate(direction) => {
                 todo!()
             }
-            MoveEvent::StartSoftDrop(field_entity) => {
-                let Ok((mut drop_timer, _)) = field_query.get_mut(*field_entity) else { continue; };
-                drop_timer.0.set_duration(SOFT_DROP_INTERVAL);
+            MoveEvent::StartSoftDrop => {
+                let Ok((_, mut local_field)) = field_query.get_single_mut() else { continue; };
+                local_field.drop_timer.set_duration(SOFT_DROP_INTERVAL);
             }
-            MoveEvent::StopSoftDrop(field_entity) => {
-                let Ok((mut drop_timer, _)) = field_query.get_mut(*field_entity) else { continue; };
-                drop_timer.0.set_duration(DROP_INTERVAL);
+            MoveEvent::StopSoftDrop => {
+                let Ok((_, mut local_field)) = field_query.get_single_mut() else { continue; };
+                local_field.drop_timer.set_duration(DROP_INTERVAL);
             }
         }
     }
