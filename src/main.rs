@@ -1,3 +1,5 @@
+#[warn(clippy::all, clippy::pedantic)]
+#[allow(clippy::cast_lossless)]
 pub mod block;
 pub mod field;
 pub mod input;
@@ -13,7 +15,7 @@ use bevy::{
     prelude::*,
     render::camera::ScalingMode,
 };
-use block::{block_transform_system, BLOCK_SIZE};
+use block::BLOCK_SIZE;
 use input::keyboard_input_system;
 use mino::event::{handle_place_mino, handle_spwan_mino, PlaceMinoEvent, SpwanMinoEvent};
 use movement::{handle_move_event, MoveEvent};
@@ -44,7 +46,7 @@ fn main() {
         .add_systems(Update, timer_system)
         .add_systems(Update, keyboard_input_system)
         .add_systems(Update, fps_system)
-        .add_systems(PostUpdate, block_transform_system)
+        .add_systems(PostUpdate, block::transform_system)
         .add_plugins(DefaultPlugins)
         .add_plugins(FrameTimeDiagnosticsPlugin)
         .run();

@@ -15,7 +15,7 @@ pub enum MinoShape {
 impl MinoShape {
     pub const COUNT: usize = 7;
 
-    pub fn size(&self) -> i32 {
+    pub fn size(&self) -> i8 {
         match self {
             Self::I => 4,
             Self::J | Self::L | Self::S | Self::T | Self::Z => 3,

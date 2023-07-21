@@ -5,8 +5,8 @@ use crate::{
     timer::{DropTimer, LockDownTimer},
 };
 
-pub const FIELD_WIDTH: i32 = 10;
-pub const FIELD_HEIGHT: i32 = 20;
+pub const FIELD_WIDTH: i8 = 10;
+pub const FIELD_HEIGHT: i8 = 20;
 
 const FIELD_GRID_WIDTH: f32 = 1.;
 

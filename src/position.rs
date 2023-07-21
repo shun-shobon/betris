@@ -2,8 +2,8 @@ use std::ops::{Add, AddAssign, Sub, SubAssign};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Position {
-    pub x: i32,
-    pub y: i32,
+    pub x: i8,
+    pub y: i8,
 }
 
 impl Add for Position {
@@ -41,7 +41,7 @@ impl SubAssign for Position {
 }
 
 impl Position {
-    pub const fn new(x: i32, y: i32) -> Self {
+    pub const fn new(x: i8, y: i8) -> Self {
         Self { x, y }
     }
 }

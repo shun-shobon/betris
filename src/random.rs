@@ -11,14 +11,6 @@ impl RandomBag {
         bag
     }
 
-    pub fn next(&mut self) -> MinoShape {
-        if self.0.is_empty() {
-            self.fill();
-        }
-
-        self.0.pop().unwrap()
-    }
-
     fn fill(&mut self) {
         let mut rng = thread_rng();
 
@@ -38,5 +30,17 @@ impl RandomBag {
 impl Default for RandomBag {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl Iterator for RandomBag {
+    type Item = MinoShape;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.0.is_empty() {
+            self.fill();
+        }
+
+        self.0.pop()
     }
 }

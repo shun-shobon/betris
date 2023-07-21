@@ -51,13 +51,13 @@ impl Block {
 
     // Based on https://stackoverflow.com/a/1996601
     // TODO: Y軸反転させたので直す (回転方向を逆にすれば良さそう？)
-    pub fn rotate_right(&mut self, size: i32) {
+    pub fn rotate_right(&mut self, size: i8) {
         let Position { x: old_x, y: old_y } = self.position;
 
         self.position.x = 1 - (old_y - (size - 1) - 2);
         self.position.y = old_x;
     }
-    pub fn rotate_left(&mut self, size: i32) {
+    pub fn rotate_left(&mut self, size: i8) {
         let Position { x: old_x, y: old_y } = self.position;
 
         self.position.x = old_y;
@@ -65,7 +65,8 @@ impl Block {
     }
 }
 
-pub fn block_transform_system(
+#[allow(clippy::needless_pass_by_value)]
+pub fn transform_system(
     mut query: Query<(&Block, &mut Transform, Option<&Parent>)>,
     mino_pos_query: Query<&MinoPosition>,
 ) {
@@ -80,8 +81,8 @@ pub fn block_transform_system(
         }
 
         transform.translation = Vec3::new(
-            (pos.x as f32 - FIELD_WIDTH as f32 / 2.) as f32 * BLOCK_SIZE + BLOCK_SIZE / 2.,
-            (pos.y as f32 - FIELD_HEIGHT as f32 / 2.) as f32 * BLOCK_SIZE + BLOCK_SIZE / 2.,
+            (pos.x as f32 - FIELD_WIDTH as f32 / 2.) * BLOCK_SIZE + BLOCK_SIZE / 2.,
+            (pos.y as f32 - FIELD_HEIGHT as f32 / 2.) * BLOCK_SIZE + BLOCK_SIZE / 2.,
             0.0,
         );
     }
