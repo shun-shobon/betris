@@ -42,7 +42,7 @@ pub fn handle_move_event(
         match event {
             MoveEvent::Move(field_entity, direction) => {
                 let Some((mut mino_pos, mino_block_entities, _)) = mino_query.iter_mut().find(|(_, _, parent)| parent.get() == *field_entity) else { continue; };
-                let Ok((_, mut lock_down_timer)) = field_query.get_mut(*field_entity) else { continue; };
+                let Ok((mut drop_timer, mut lock_down_timer)) = field_query.get_mut(*field_entity) else { continue; };
                 let field_blocks = blocks_query
                     .iter()
                     .filter(|(_, parent)| parent.get() == *field_entity)
@@ -71,6 +71,7 @@ pub fn handle_move_event(
                     &field_blocks,
                 );
                 if is_landed {
+                    drop_timer.0.reset();
                     lock_down_timer.0.unpause();
                 }
             }
