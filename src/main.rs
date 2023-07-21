@@ -4,6 +4,7 @@ pub mod input;
 pub mod mino;
 pub mod movement;
 pub mod position;
+pub mod random;
 pub mod timer;
 
 use crate::field::Field;

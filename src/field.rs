@@ -1,6 +1,9 @@
 use bevy::prelude::*;
 
-use crate::timer::{DropTimer, LockDownTimer};
+use crate::{
+    random::RandomBag,
+    timer::{DropTimer, LockDownTimer},
+};
 
 pub const FIELD_WIDTH: i32 = 10;
 pub const FIELD_HEIGHT: i32 = 20;
@@ -11,14 +14,21 @@ const FIELD_GRID_WIDTH: f32 = 1.;
 pub struct Field {
     pub id: u32,
     pub block_size: f32,
+    pub random_bag: RandomBag,
 }
 
 impl Field {
     pub fn spawn(commands: &mut Commands, block_size: f32, translation: Vec3) -> Entity {
+        let field = Field {
+            id: 0,
+            block_size,
+            random_bag: RandomBag::default(),
+        };
+
         commands
             .spawn((
                 SpatialBundle::from_transform(Transform::from_translation(translation)),
-                Field { id: 0, block_size },
+                field,
                 DropTimer::default(),
                 LockDownTimer::default(),
             ))

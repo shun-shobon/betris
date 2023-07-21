@@ -1,4 +1,4 @@
-use super::{shape::MinoShape, Mino, MinoPosition};
+use super::{Mino, MinoPosition};
 use crate::{block::Block, field::Field};
 use bevy::prelude::*;
 
@@ -11,12 +11,12 @@ pub struct PlaceMinoEvent(pub Entity);
 pub fn handle_spwan_mino(
     mut commands: Commands,
     mut spwan_mino_events: EventReader<SpwanMinoEvent>,
-    field_query: Query<&Field>,
+    mut field_query: Query<&mut Field>,
 ) {
     for SpwanMinoEvent(field_entity) in spwan_mino_events.iter() {
-        let Ok(field) = field_query.get(*field_entity) else { continue; };
+        let Ok(mut field) = field_query.get_mut(*field_entity) else { continue; };
 
-        let mino_type = MinoShape::T;
+        let mino_type = field.random_bag.next();
 
         let mino_entity = Mino::spawn(&mut commands, mino_type, field.block_size);
         commands.entity(*field_entity).add_child(mino_entity);
