@@ -28,7 +28,7 @@ impl MinoShape {
             MinoShape::I => Color::rgb(0.0, 1.0, 1.0),
             MinoShape::J => Color::rgb(0.0, 0.0, 1.0),
             MinoShape::L => Color::rgb(1.0, 0.5, 0.0),
-            MinoShape::O => Color::rgb(1.0, 0.5, 0.0),
+            MinoShape::O => Color::rgb(1.0, 1.0, 0.0),
             MinoShape::S => Color::rgb(0.0, 1.0, 0.0),
             MinoShape::T => Color::rgb(0.5, 0.0, 1.0),
             MinoShape::Z => Color::rgb(1.0, 0.0, 0.0),
