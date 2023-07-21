@@ -55,10 +55,13 @@ impl Field {
 
 impl Default for LocalField {
     fn default() -> Self {
+        let mut lock_down_timer = Timer::new(LOCK_DOWN_INTERVAL, TimerMode::Once);
+        lock_down_timer.pause();
+
         Self {
             random_bag: RandomBag::new(),
             drop_timer: Timer::new(DROP_INTERVAL, TimerMode::Repeating),
-            lock_down_timer: Timer::new(LOCK_DOWN_INTERVAL, TimerMode::Once),
+            lock_down_timer,
         }
     }
 }
