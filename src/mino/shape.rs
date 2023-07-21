@@ -48,6 +48,35 @@ impl MinoShape {
     }
 }
 
+impl From<u8> for MinoShape {
+    fn from(value: u8) -> Self {
+        match value {
+            0 => Self::I,
+            1 => Self::J,
+            2 => Self::L,
+            3 => Self::O,
+            4 => Self::S,
+            5 => Self::T,
+            6 => Self::Z,
+            _ => unreachable!(),
+        }
+    }
+}
+
+impl From<MinoShape> for u8 {
+    fn from(shape: MinoShape) -> Self {
+        match shape {
+            MinoShape::I => 0,
+            MinoShape::J => 1,
+            MinoShape::L => 2,
+            MinoShape::O => 3,
+            MinoShape::S => 4,
+            MinoShape::T => 5,
+            MinoShape::Z => 6,
+        }
+    }
+}
+
 static I_SHAPE: &[Position] = &[
     Position::new(0, 2),
     Position::new(1, 2),

@@ -6,7 +6,7 @@ use crate::{
 use bevy::prelude::*;
 
 #[derive(Event)]
-pub struct SpwanMinoEvent(pub Entity);
+pub struct SpwanMinoEvent;
 
 #[derive(Event)]
 pub struct PlaceMinoEvent(pub Entity);
@@ -14,15 +14,15 @@ pub struct PlaceMinoEvent(pub Entity);
 pub fn handle_spwan_mino(
     mut commands: Commands,
     mut spwan_mino_events: EventReader<SpwanMinoEvent>,
-    mut field_query: Query<(&Field, &mut LocalField)>,
+    mut field_query: Query<(Entity, &Field, &mut LocalField)>,
 ) {
-    for SpwanMinoEvent(field_entity) in spwan_mino_events.iter() {
-        let Ok((field, mut local_field)) = field_query.get_mut(*field_entity) else { continue; };
+    for SpwanMinoEvent in spwan_mino_events.iter() {
+        let Ok((field_entity, field, mut local_field)) = field_query.get_single_mut() else { continue; };
 
         let mino_type = local_field.random_bag.next().unwrap();
 
         let mino_entity = Mino::spawn(&mut commands, mino_type, field.block_size);
-        commands.entity(*field_entity).add_child(mino_entity);
+        commands.entity(field_entity).add_child(mino_entity);
     }
 }
 
@@ -47,6 +47,6 @@ pub fn handle_place_mino(
         });
 
         commands.entity(mino_entity).despawn_recursive();
-        spawn_mino_event_writer.send(SpwanMinoEvent(*field_entity));
+        spawn_mino_event_writer.send(SpwanMinoEvent);
     }
 }

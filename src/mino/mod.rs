@@ -45,3 +45,26 @@ impl Mino {
             .id()
     }
 }
+
+impl From<u8> for Angle {
+    fn from(angle: u8) -> Self {
+        match angle {
+            0 => Self::Deg0,
+            1 => Self::Deg90,
+            2 => Self::Deg180,
+            3 => Self::Deg270,
+            _ => unreachable!(),
+        }
+    }
+}
+
+impl From<Angle> for u8 {
+    fn from(angle: Angle) -> Self {
+        match angle {
+            Angle::Deg0 => 0,
+            Angle::Deg90 => 1,
+            Angle::Deg180 => 2,
+            Angle::Deg270 => 3,
+        }
+    }
+}

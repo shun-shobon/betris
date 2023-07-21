@@ -9,20 +9,21 @@ pub mod position;
 pub mod random;
 pub mod timer;
 
-use crate::field::Field;
 use bevy::{
     diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin},
+    log::LogPlugin,
     prelude::*,
     render::camera::ScalingMode,
 };
 use block::BLOCK_SIZE;
+use field::Field;
 use input::keyboard_input_system;
 use mino::event::{handle_place_mino, handle_spwan_mino, PlaceMinoEvent, SpwanMinoEvent};
 use movement::{handle_move_event, MoveEvent};
 use timer::timer_system;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, States)]
-enum GameState {
+pub enum GameState {
     #[default]
     MatchMaking,
     Playing,
@@ -33,26 +34,46 @@ struct FpsText;
 
 fn main() {
     App::new()
+        .insert_resource(ClearColor(Color::rgb(0.0, 0.0, 0.0)))
+        .add_plugins(
+            DefaultPlugins
+                .set(LogPlugin {
+                    filter: "info,wgpu_core=warn,wgpu_hal=warn".into(),
+                    level: bevy::log::Level::DEBUG,
+                })
+                .set(WindowPlugin {
+                    primary_window: Some(Window {
+                        title: "Tetris".into(),
+                        ..default()
+                    }),
+                    ..default()
+                }),
+        )
+        .add_plugins(FrameTimeDiagnosticsPlugin)
         .add_state::<GameState>()
         .add_event::<SpwanMinoEvent>()
         .add_event::<PlaceMinoEvent>()
         .add_event::<MoveEvent>()
         .insert_resource(input::KeyboardRepeatTimer::default())
         .add_systems(Startup, setup)
+        .add_systems(Update, fps_system)
+        .add_systems(OnEnter(GameState::Playing), (setup_game,))
         .add_systems(
             Update,
-            (handle_move_event, handle_spwan_mino, handle_place_mino),
+            (
+                timer_system,
+                keyboard_input_system,
+                handle_move_event,
+                handle_spwan_mino,
+                handle_place_mino,
+            )
+                .run_if(in_state(GameState::Playing)),
         )
-        .add_systems(Update, timer_system)
-        .add_systems(Update, keyboard_input_system)
-        .add_systems(Update, fps_system)
         .add_systems(PostUpdate, block::transform_system)
-        .add_plugins(DefaultPlugins)
-        .add_plugins(FrameTimeDiagnosticsPlugin)
         .run();
 }
 
-fn setup(mut commands: Commands, mut mino_events: EventWriter<SpwanMinoEvent>) {
+fn setup(mut commands: Commands, mut game_state: ResMut<NextState<GameState>>) {
     let mut camera_bundle = Camera2dBundle::default();
     camera_bundle.projection.scaling_mode = ScalingMode::FixedVertical(1000.);
     commands.spawn(camera_bundle);
@@ -83,8 +104,13 @@ fn setup(mut commands: Commands, mut mino_events: EventWriter<SpwanMinoEvent>) {
         )
         .insert(FpsText);
 
-    let field_entity = Field::spawn(&mut commands, BLOCK_SIZE, Vec3::new(-500., 0., 0.));
-    mino_events.send(SpwanMinoEvent(field_entity));
+    game_state.set(GameState::Playing);
+}
+
+fn setup_game(mut commands: Commands, mut spawn_mino_events: EventWriter<SpwanMinoEvent>) {
+    let field = Field::new(0, BLOCK_SIZE);
+    Field::spawn(&mut commands, field, true, Vec3::new(-500., 0., 0.));
+    spawn_mino_events.send(SpwanMinoEvent);
 }
 
 fn fps_system(diagnostic: Res<DiagnosticsStore>, mut query: Query<&mut Text, With<FpsText>>) {
