@@ -14,7 +14,7 @@ pub struct Block {
     pub position: Position,
 }
 
-macro_rules! spwan_block {
+macro_rules! spawn_block {
     ($commands:tt, $color:tt, $size:tt, $position:tt) => {
         $commands
             .spawn(SpriteBundle {
@@ -37,16 +37,16 @@ macro_rules! spwan_block {
 
 impl Block {
     pub fn spawn(commands: &mut Commands, color: Color, size: f32, position: Position) -> Entity {
-        spwan_block!(commands, color, size, position)
+        spawn_block!(commands, color, size, position)
     }
 
-    pub fn spwan_with_parent(
+    pub fn spawn_with_parent(
         parent: &mut ChildBuilder,
         color: Color,
         size: f32,
         position: Position,
     ) -> Entity {
-        spwan_block!(parent, color, size, position)
+        spawn_block!(parent, color, size, position)
     }
 
     // Based on https://stackoverflow.com/a/1996601

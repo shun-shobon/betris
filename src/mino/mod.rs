@@ -39,7 +39,7 @@ impl Mino {
             ))
             .with_children(|parent| {
                 for &block_pos in shape.blocks().iter() {
-                    Block::spwan_with_parent(parent, shape.color(), block_size, block_pos);
+                    Block::spawn_with_parent(parent, shape.color(), block_size, block_pos);
                 }
             })
             .id()

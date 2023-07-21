@@ -6,17 +6,17 @@ use crate::{
 use bevy::prelude::*;
 
 #[derive(Event)]
-pub struct SpwanMinoEvent;
+pub struct SpawnMinoEvent;
 
 #[derive(Event)]
 pub struct PlaceMinoEvent(pub Entity);
 
-pub fn handle_spwan_mino(
+pub fn handle_spawn_mino(
     mut commands: Commands,
-    mut spwan_mino_events: EventReader<SpwanMinoEvent>,
+    mut spawn_mino_events: EventReader<SpawnMinoEvent>,
     mut field_query: Query<(Entity, &Field, &mut LocalField)>,
 ) {
-    for SpwanMinoEvent in spwan_mino_events.iter() {
+    for SpawnMinoEvent in spawn_mino_events.iter() {
         let Ok((field_entity, field, mut local_field)) = field_query.get_single_mut() else { continue; };
 
         let mino_type = local_field.random_bag.next().unwrap();
@@ -29,7 +29,7 @@ pub fn handle_spwan_mino(
 pub fn handle_place_mino(
     mut commands: Commands,
     mut place_mino_events: EventReader<PlaceMinoEvent>,
-    mut spawn_mino_event_writer: EventWriter<SpwanMinoEvent>,
+    mut spawn_mino_event_writer: EventWriter<SpawnMinoEvent>,
     mino_query: Query<(Entity, &MinoPosition, &Children, &Parent), With<Mino>>,
     field_query: Query<&Field>,
     block_query: Query<(&Block, &Sprite, &Parent)>,
@@ -42,11 +42,11 @@ pub fn handle_place_mino(
             for &block_entity in mino_block_entities.iter() {
                 let (block, block_sprite, _) = block_query.get(block_entity).unwrap();
                 let block_pos = block.position + mino_pos.0;
-                Block::spwan_with_parent(parent, block_sprite.color, field.block_size, block_pos);
+                Block::spawn_with_parent(parent, block_sprite.color, field.block_size, block_pos);
             }
         });
 
         commands.entity(mino_entity).despawn_recursive();
-        spawn_mino_event_writer.send(SpwanMinoEvent);
+        spawn_mino_event_writer.send(SpawnMinoEvent);
     }
 }

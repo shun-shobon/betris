@@ -18,7 +18,7 @@ use bevy::{
 use block::BLOCK_SIZE;
 use field::Field;
 use input::keyboard_input_system;
-use mino::event::{handle_place_mino, handle_spwan_mino, PlaceMinoEvent, SpwanMinoEvent};
+use mino::event::{handle_place_mino, handle_spawn_mino, PlaceMinoEvent, SpawnMinoEvent};
 use movement::{handle_move_event, MoveEvent};
 use timer::timer_system;
 
@@ -51,7 +51,7 @@ fn main() {
         )
         .add_plugins(FrameTimeDiagnosticsPlugin)
         .add_state::<GameState>()
-        .add_event::<SpwanMinoEvent>()
+        .add_event::<SpawnMinoEvent>()
         .add_event::<PlaceMinoEvent>()
         .add_event::<MoveEvent>()
         .insert_resource(input::KeyboardRepeatTimer::default())
@@ -64,7 +64,7 @@ fn main() {
                 timer_system,
                 keyboard_input_system,
                 handle_move_event,
-                handle_spwan_mino,
+                handle_spawn_mino,
                 handle_place_mino,
             )
                 .run_if(in_state(GameState::Playing)),
@@ -107,10 +107,10 @@ fn setup(mut commands: Commands, mut game_state: ResMut<NextState<GameState>>) {
     game_state.set(GameState::Playing);
 }
 
-fn setup_game(mut commands: Commands, mut spawn_mino_events: EventWriter<SpwanMinoEvent>) {
+fn setup_game(mut commands: Commands, mut spawn_mino_events: EventWriter<SpawnMinoEvent>) {
     let field = Field::new(0, BLOCK_SIZE);
     Field::spawn(&mut commands, field, true, Vec3::new(-500., 0., 0.));
-    spawn_mino_events.send(SpwanMinoEvent);
+    spawn_mino_events.send(SpawnMinoEvent);
 }
 
 fn fps_system(diagnostic: Res<DiagnosticsStore>, mut query: Query<&mut Text, With<FpsText>>) {

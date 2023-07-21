@@ -43,11 +43,11 @@ impl Field {
         if is_local_field {
             field_commands
                 .insert(LocalField::default())
-                .with_children(|parent| spwan_grid(parent, block_size))
+                .with_children(|parent| spawn_grid(parent, block_size))
                 .id()
         } else {
             field_commands
-                .with_children(|parent| spwan_grid(parent, block_size))
+                .with_children(|parent| spawn_grid(parent, block_size))
                 .id()
         }
     }
@@ -66,7 +66,7 @@ impl Default for LocalField {
     }
 }
 
-fn spwan_grid(parent: &mut ChildBuilder, block_size: f32) {
+fn spawn_grid(parent: &mut ChildBuilder, block_size: f32) {
     let width = FIELD_WIDTH as f32 * block_size;
     let height = FIELD_HEIGHT as f32 * block_size;
 
