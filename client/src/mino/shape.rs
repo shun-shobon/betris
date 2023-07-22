@@ -1,7 +1,8 @@
 use crate::position::Position;
 use bevy::prelude::*;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum MinoShape {
     I,
     J,

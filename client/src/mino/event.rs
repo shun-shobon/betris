@@ -1,15 +1,22 @@
-use super::{Mino, MinoPosition};
+use super::{shape::MinoShape, Angle, Mino};
 use crate::{
     block::Block,
     field::{Field, LocalField},
+    net::PlayerId,
+    position::Position,
 };
 use bevy::prelude::*;
 
 #[derive(Event)]
 pub struct SpawnMinoEvent;
 
-#[derive(Event)]
-pub struct PlaceMinoEvent(pub Entity);
+#[derive(Debug, Clone, Copy, Event)]
+pub struct PlaceMinoEvent {
+    pub player_id: PlayerId,
+    pub pos: Position,
+    pub angle: Angle,
+    pub shape: MinoShape,
+}
 
 pub fn handle_spawn_mino(
     mut commands: Commands,
@@ -19,9 +26,9 @@ pub fn handle_spawn_mino(
     for SpawnMinoEvent in spawn_mino_events.iter() {
         let Ok((field_entity, field, mut local_field)) = field_query.get_single_mut() else { continue; };
 
-        let mino_type = local_field.random_bag.next().unwrap();
+        let mino_shape = local_field.random_bag.next().unwrap();
 
-        let mino_entity = Mino::spawn(&mut commands, mino_type, field.block_size);
+        let mino_entity = Mino::new(mino_shape).spawn(&mut commands, field.block_size);
         commands.entity(field_entity).add_child(mino_entity);
     }
 }
@@ -29,24 +36,17 @@ pub fn handle_spawn_mino(
 pub fn handle_place_mino(
     mut commands: Commands,
     mut place_mino_events: EventReader<PlaceMinoEvent>,
-    mut spawn_mino_event_writer: EventWriter<SpawnMinoEvent>,
-    mino_query: Query<(Entity, &MinoPosition, &Children, &Parent), With<Mino>>,
-    field_query: Query<&Field>,
-    block_query: Query<(&Block, &Sprite, &Parent)>,
+    field_query: Query<(Entity, &Field)>,
 ) {
-    for PlaceMinoEvent(field_entity) in place_mino_events.iter() {
-        let Some((mino_entity, mino_pos, mino_block_entities, _)) = mino_query.iter().find(|(_, _, _, parent)| parent.get() == *field_entity) else { continue; };
-        let Ok(field) = field_query.get(*field_entity) else { continue; };
+    for event in place_mino_events.iter() {
+        let Some((field_entity, field)) = field_query.iter().find(|(_, field)| field.player_id == event.player_id) else { continue; };
 
-        commands.entity(*field_entity).with_children(|parent| {
-            for &block_entity in mino_block_entities.iter() {
-                let (block, block_sprite, _) = block_query.get(block_entity).unwrap();
-                let block_pos = block.position + mino_pos.0;
-                Block::spawn_with_parent(parent, block_sprite.color, field.block_size, block_pos);
+        commands.entity(field_entity).with_children(|parent| {
+            for &block_pos in event.shape.blocks().iter() {
+                // TODO: 向きの処理
+                let block_pos = block_pos + event.pos;
+                Block::spawn_with_parent(parent, event.shape.color(), field.block_size, block_pos);
             }
         });
-
-        commands.entity(mino_entity).despawn_recursive();
-        spawn_mino_event_writer.send(SpawnMinoEvent);
     }
 }

@@ -1,11 +1,44 @@
-use crate::{block::BLOCK_SIZE, field::Field, AppState};
+use crate::{
+    block::BLOCK_SIZE,
+    field::{Field, LocalField},
+    mino::{
+        event::{PlaceMinoEvent, SpawnMinoEvent},
+        shape::MinoShape,
+        Angle, Mino, MinoPosition,
+    },
+    position::Position,
+    AppState,
+};
 use bevy::prelude::*;
 use bevy_matchbox::prelude::*;
+use serde::{Deserialize, Serialize};
 
 pub const NUM_PLAYERS: usize = 2;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PlayerId(PeerId);
+
+#[derive(Event)]
+pub struct LocalPlaceMinoEvent;
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+enum Message {
+    MinoPlaced {
+        pos: Position,
+        angle: Angle,
+        shape: MinoShape,
+    },
+}
+
+impl From<PlaceMinoEvent> for Message {
+    fn from(event: PlaceMinoEvent) -> Self {
+        Self::MinoPlaced {
+            pos: event.pos,
+            angle: event.angle,
+            shape: event.shape,
+        }
+    }
+}
 
 pub fn setup_matchbox_socket(mut commands: Commands) {
     let room_id = "tetris";
@@ -50,4 +83,55 @@ pub fn waiting_for_player_system(
     }
 
     app_state.set(AppState::Playing);
+}
+
+pub fn recieve_message_system(
+    mut socket: ResMut<MatchboxSocket<SingleChannel>>,
+    mut place_mino_event_writer: EventWriter<PlaceMinoEvent>,
+) {
+    for (peer_id, message) in socket.receive() {
+        match bincode::deserialize(&message).unwrap() {
+            Message::MinoPlaced { pos, angle, shape } => {
+                info!("MinoPlaced: {:?}", (pos, angle, shape));
+                place_mino_event_writer.send(PlaceMinoEvent {
+                    player_id: PlayerId(peer_id),
+                    pos,
+                    angle,
+                    shape,
+                });
+            }
+        }
+    }
+}
+
+pub fn handle_local_spawn_mino_event(
+    mut commands: Commands,
+    mut socket: ResMut<MatchboxSocket<SingleChannel>>,
+    field_query: Query<&Field, With<LocalField>>,
+    mut mino_query: Query<(Entity, &Mino, &MinoPosition)>,
+    mut local_place_mino_event_reader: EventReader<LocalPlaceMinoEvent>,
+    mut place_mino_event_writer: EventWriter<PlaceMinoEvent>,
+    mut spwan_mino_event_writer: EventWriter<SpawnMinoEvent>,
+) {
+    for _ in local_place_mino_event_reader.iter() {
+        let Ok(field) = field_query.get_single() else { return; };
+        let (mino_entity, mino, mino_position) = mino_query.get_single_mut().unwrap();
+
+        let place_mino_event = PlaceMinoEvent {
+            player_id: field.player_id,
+            pos: mino_position.0,
+            angle: mino.angle,
+            shape: mino.shape,
+        };
+
+        place_mino_event_writer.send(place_mino_event);
+        commands.entity(mino_entity).despawn_recursive();
+        spwan_mino_event_writer.send(SpawnMinoEvent);
+
+        let message = Message::from(place_mino_event);
+        for peer_id in socket.connected_peers().collect::<Vec<_>>().iter() {
+            let message = bincode::serialize(&message).unwrap().into_boxed_slice();
+            socket.send(message, *peer_id);
+        }
+    }
 }

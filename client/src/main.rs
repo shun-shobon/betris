@@ -20,7 +20,10 @@ use block::transform_system;
 use input::{keyboard_input_system, KeyboardRepeatTimer};
 use mino::event::{handle_place_mino, handle_spawn_mino, PlaceMinoEvent, SpawnMinoEvent};
 use movement::{handle_move_event, MoveEvent};
-use net::{setup_matchbox_socket, waiting_for_player_system};
+use net::{
+    handle_local_spawn_mino_event, recieve_message_system, setup_matchbox_socket,
+    waiting_for_player_system, LocalPlaceMinoEvent,
+};
 use timer::timer_system;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, States)]
@@ -54,6 +57,7 @@ fn main() {
         .add_event::<SpawnMinoEvent>()
         .add_event::<PlaceMinoEvent>()
         .add_event::<MoveEvent>()
+        .add_event::<LocalPlaceMinoEvent>()
         .insert_resource(KeyboardRepeatTimer::default())
         .add_systems(Startup, setup)
         .add_systems(Update, fps_system)
@@ -68,9 +72,11 @@ fn main() {
             (
                 timer_system,
                 keyboard_input_system,
+                recieve_message_system,
                 handle_move_event,
                 handle_spawn_mino,
                 handle_place_mino,
+                handle_local_spawn_mino_event,
             )
                 .run_if(in_state(AppState::Playing)),
         )
