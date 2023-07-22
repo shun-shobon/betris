@@ -11,7 +11,7 @@ const FIELD_GRID_WIDTH: f32 = 1.;
 
 #[derive(Component)]
 pub struct Field {
-    pub handle: usize,
+    pub id: u64,
     pub block_size: f32,
 }
 
@@ -23,8 +23,8 @@ pub struct LocalField {
 }
 
 impl Field {
-    pub fn new(handle: usize, block_size: f32) -> Self {
-        Self { handle, block_size }
+    pub fn new(id: u64, block_size: f32) -> Self {
+        Self { id, block_size }
     }
 
     pub fn spawn(

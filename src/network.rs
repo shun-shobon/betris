@@ -1,3 +1,4 @@
+use bevy::prelude::*;
 use bevy_renet::renet::{
     transport::{
         ClientAuthentication, NetcodeClientTransport, NetcodeServerTransport, ServerAuthentication,
@@ -5,12 +6,24 @@ use bevy_renet::renet::{
     },
     ConnectionConfig, RenetClient, RenetServer,
 };
+use serde::{Deserialize, Serialize};
 use std::{net::UdpSocket, time::SystemTime};
 
 const SERVER_ADDR: &str = "127.0.0.1:5000";
 const PROTOCOL_ID: u64 = 0;
+pub const NUM_PLAYER: usize = 1;
 
-pub fn renet_client() -> (RenetClient, NetcodeClientTransport) {
+#[derive(Debug, Serialize, Deserialize)]
+pub enum ServerMessage {
+    PlayerConnected { id: u64 },
+    PlayerDisconnected { id: u64 },
+    GameStart,
+}
+
+#[derive(Debug, Resource)]
+pub struct LocalPlayerId(pub u64);
+
+pub fn renet_client() -> (RenetClient, NetcodeClientTransport, LocalPlayerId) {
     let client = RenetClient::new(ConnectionConfig::default());
 
     let server_addr = SERVER_ADDR.parse().unwrap();
@@ -28,7 +41,7 @@ pub fn renet_client() -> (RenetClient, NetcodeClientTransport) {
 
     let transport = NetcodeClientTransport::new(current_time, authentication, socket).unwrap();
 
-    (client, transport)
+    (client, transport, LocalPlayerId(client_id))
 }
 
 pub fn new_renet_server() -> (RenetServer, NetcodeServerTransport) {
