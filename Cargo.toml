@@ -10,6 +10,7 @@ opt-level = 1
 opt-level = 3
 
 [dependencies]
+bevy_renet = "0.0.9"
 if_chain = "1.0.2"
 rand = "0.8.5"
 

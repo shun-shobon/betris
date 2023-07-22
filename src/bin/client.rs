@@ -1,26 +1,19 @@
-#[warn(clippy::all, clippy::pedantic)]
-#[allow(clippy::cast_lossless)]
-pub mod block;
-pub mod field;
-pub mod input;
-pub mod mino;
-pub mod movement;
-pub mod position;
-pub mod random;
-pub mod timer;
-
 use bevy::{
     diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin},
     log::LogPlugin,
     prelude::*,
     render::camera::ScalingMode,
 };
-use block::BLOCK_SIZE;
-use field::Field;
-use input::keyboard_input_system;
-use mino::event::{handle_place_mino, handle_spawn_mino, PlaceMinoEvent, SpawnMinoEvent};
-use movement::{handle_move_event, MoveEvent};
-use timer::timer_system;
+use bevy_renet::{transport::NetcodeClientPlugin, RenetClientPlugin};
+use tetris::{
+    block::{transform_system, BLOCK_SIZE},
+    field::Field,
+    input::{keyboard_input_system, KeyboardRepeatTimer},
+    mino::event::{handle_place_mino, handle_spawn_mino, PlaceMinoEvent, SpawnMinoEvent},
+    movement::{handle_move_event, MoveEvent},
+    network::renet_client,
+    timer::timer_system,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, States)]
 pub enum GameState {
@@ -33,8 +26,9 @@ pub enum GameState {
 struct FpsText;
 
 fn main() {
+    let (client, transport) = renet_client();
+
     App::new()
-        .insert_resource(ClearColor(Color::rgb(0.0, 0.0, 0.0)))
         .add_plugins(
             DefaultPlugins
                 .set(LogPlugin {
@@ -50,11 +44,15 @@ fn main() {
                 }),
         )
         .add_plugins(FrameTimeDiagnosticsPlugin)
+        .add_plugins(RenetClientPlugin)
+        .add_plugins(NetcodeClientPlugin)
         .add_state::<GameState>()
         .add_event::<SpawnMinoEvent>()
         .add_event::<PlaceMinoEvent>()
         .add_event::<MoveEvent>()
-        .insert_resource(input::KeyboardRepeatTimer::default())
+        .insert_resource(KeyboardRepeatTimer::default())
+        .insert_resource(client)
+        .insert_resource(transport)
         .add_systems(Startup, setup)
         .add_systems(Update, fps_system)
         .add_systems(OnEnter(GameState::Playing), (setup_game,))
@@ -69,7 +67,7 @@ fn main() {
             )
                 .run_if(in_state(GameState::Playing)),
         )
-        .add_systems(PostUpdate, block::transform_system)
+        .add_systems(PostUpdate, transform_system)
         .run();
 }
 
