@@ -1,18 +1,10 @@
 use crate::AppState;
 use axum::{extract::State, Json};
-use serde::{Deserialize, Serialize};
+use tetris_schema::{Room, Rooms};
 
-#[derive(Serialize, Deserialize)]
-pub struct RoomSummary {
-    pub id: String,
-}
-
-pub async fn get_all_rooms(State(rooms): State<AppState>) -> Json<Vec<RoomSummary>> {
+pub async fn get_all_rooms(State(rooms): State<AppState>) -> Json<Rooms> {
     let rooms = rooms.read().await;
 
-    let json = rooms
-        .keys()
-        .map(|id| RoomSummary { id: id.clone() })
-        .collect();
-    Json(json)
+    let res_rooms = rooms.keys().map(|id| Room { id: id.clone() }).collect();
+    Json(Rooms(res_rooms))
 }

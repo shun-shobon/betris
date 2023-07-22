@@ -14,7 +14,8 @@ pub struct Room;
 async fn main() {
     tracing_subscriber::fmt().init();
 
-    let rooms: HashMap<String, Room> = HashMap::new();
+    let mut rooms: HashMap<String, Room> = HashMap::new();
+    rooms.insert("test".to_string(), Room);
     let rooms = Arc::new(RwLock::new(rooms));
 
     let app = Router::new()

@@ -3347,12 +3347,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "tetris-schema"
+version = "0.1.0"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "tetris-server"
 version = "0.1.0"
 dependencies = [
  "axum",
- "serde",
- "serde_json",
+ "tetris-schema",
  "tokio",
  "tracing",
  "tracing-subscriber",
