@@ -76,7 +76,7 @@ pub fn handle_move_event(
                     local_field.lock_down_timer.unpause();
                 }
             }
-            MoveEvent::Rotate(direction) => {
+            MoveEvent::Rotate(_direction) => {
                 todo!()
             }
             MoveEvent::StartSoftDrop => {
@@ -91,6 +91,7 @@ pub fn handle_move_event(
     }
 }
 
+#[allow(dead_code)]
 fn get_new_angle(angle: Angle, direction: Direction) -> Angle {
     use Angle::*;
 
