@@ -5,6 +5,7 @@ pub mod field;
 pub mod input;
 pub mod mino;
 pub mod movement;
+pub mod net;
 pub mod position;
 pub mod random;
 pub mod timer;
@@ -15,11 +16,11 @@ use bevy::{
     prelude::*,
     render::camera::ScalingMode,
 };
-use block::{transform_system, BLOCK_SIZE};
-use field::Field;
+use block::transform_system;
 use input::{keyboard_input_system, KeyboardRepeatTimer};
 use mino::event::{handle_place_mino, handle_spawn_mino, PlaceMinoEvent, SpawnMinoEvent};
 use movement::{handle_move_event, MoveEvent};
+use net::{setup_matchbox_socket, waiting_for_player_system};
 use timer::timer_system;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, States)]
@@ -56,7 +57,12 @@ fn main() {
         .insert_resource(KeyboardRepeatTimer::default())
         .add_systems(Startup, setup)
         .add_systems(Update, fps_system)
-        .add_systems(OnEnter(AppState::Playing), (setup_game,))
+        .add_systems(OnEnter(AppState::MatchMaking), setup_matchbox_socket)
+        .add_systems(
+            Update,
+            waiting_for_player_system.run_if(in_state(AppState::MatchMaking)),
+        )
+        .add_systems(OnEnter(AppState::Playing), setup_game)
         .add_systems(
             Update,
             (
@@ -72,7 +78,7 @@ fn main() {
         .run();
 }
 
-fn setup(mut commands: Commands, mut app_state: ResMut<NextState<AppState>>) {
+fn setup(mut commands: Commands) {
     let mut camera_bundle = Camera2dBundle::default();
     camera_bundle.projection.scaling_mode = ScalingMode::FixedVertical(1000.);
     commands.spawn(camera_bundle);
@@ -102,11 +108,6 @@ fn setup(mut commands: Commands, mut app_state: ResMut<NextState<AppState>>) {
             }),
         )
         .insert(FpsText);
-
-    let field = Field::new(0, BLOCK_SIZE);
-    Field::spawn(&mut commands, field, true, Vec3::new(-500., 0., 0.));
-
-    app_state.set(AppState::Playing);
 }
 
 fn setup_game(mut spawn_mino_events: EventWriter<SpawnMinoEvent>) {

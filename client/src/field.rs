@@ -1,4 +1,5 @@
 use crate::{
+    net::PlayerId,
     random::RandomBag,
     timer::{DROP_INTERVAL, LOCK_DOWN_INTERVAL},
 };
@@ -11,7 +12,7 @@ const FIELD_GRID_WIDTH: f32 = 1.;
 
 #[derive(Component)]
 pub struct Field {
-    pub id: u64,
+    pub player_id: PlayerId,
     pub block_size: f32,
 }
 
@@ -23,21 +24,19 @@ pub struct LocalField {
 }
 
 impl Field {
-    pub fn new(id: u64, block_size: f32) -> Self {
-        Self { id, block_size }
+    pub fn new(player_id: PlayerId, block_size: f32) -> Self {
+        Self {
+            player_id,
+            block_size,
+        }
     }
 
-    pub fn spawn(
-        commands: &mut Commands,
-        field: Field,
-        is_local_field: bool,
-        translation: Vec3,
-    ) -> Entity {
-        let block_size = field.block_size;
+    pub fn spawn(self, commands: &mut Commands, is_local_field: bool, translation: Vec3) -> Entity {
+        let block_size = self.block_size;
 
         let mut field_commands = commands.spawn((
             SpatialBundle::from_transform(Transform::from_translation(translation)),
-            field,
+            self,
         ));
 
         if is_local_field {
