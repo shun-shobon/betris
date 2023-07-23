@@ -48,21 +48,6 @@ impl Block {
     ) -> Entity {
         spawn_block!(parent, color, size, position)
     }
-
-    // Based on https://stackoverflow.com/a/1996601
-    // TODO: Y軸反転させたので直す (回転方向を逆にすれば良さそう？)
-    pub fn rotate_right(&mut self, size: i8) {
-        let Position { x: old_x, y: old_y } = self.position;
-
-        self.position.x = 1 - (old_y - (size - 1) - 2);
-        self.position.y = old_x;
-    }
-    pub fn rotate_left(&mut self, size: i8) {
-        let Position { x: old_x, y: old_y } = self.position;
-
-        self.position.x = old_y;
-        self.position.y = 1 - (old_x - (size - 1) - 2);
-    }
 }
 
 #[allow(clippy::needless_pass_by_value)]
