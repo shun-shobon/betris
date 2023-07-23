@@ -7,13 +7,18 @@ use bevy::prelude::*;
 
 pub const FIELD_WIDTH: i8 = 10;
 pub const FIELD_HEIGHT: i8 = 20;
+// この値よりもブロックがせり上がった場合はゲームオーバー
+pub const FIELD_MAX_HEIGHT: i8 = FIELD_HEIGHT + 20;
 
 const FIELD_GRID_WIDTH: f32 = 1.;
+
+type Lines = [[bool; FIELD_WIDTH as usize]; FIELD_MAX_HEIGHT as usize];
 
 #[derive(Component)]
 pub struct Field {
     pub player_id: PlayerId,
     pub block_size: f32,
+    pub lines: Lines,
 }
 
 #[derive(Component)]
@@ -25,9 +30,12 @@ pub struct LocalField {
 
 impl Field {
     pub fn new(player_id: PlayerId, block_size: f32) -> Self {
+        let lines = [[false; FIELD_WIDTH as usize]; FIELD_MAX_HEIGHT as usize];
+
         Self {
             player_id,
             block_size,
+            lines,
         }
     }
 
