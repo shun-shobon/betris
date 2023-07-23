@@ -42,8 +42,7 @@ pub fn handle_place_mino(
         let Some((field_entity, field)) = field_query.iter().find(|(_, field)| field.player_id == event.player_id) else { continue; };
 
         commands.entity(field_entity).with_children(|parent| {
-            for &block_pos in event.shape.blocks().iter() {
-                // TODO: 向きの処理
+            for &block_pos in event.shape.blocks(event.angle).iter() {
                 let block_pos = block_pos + event.pos;
                 Block::spawn_with_parent(parent, event.shape.color(), field.block_size, block_pos);
             }

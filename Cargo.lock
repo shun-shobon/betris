@@ -4726,6 +4726,7 @@ dependencies = [
  "bevy_matchbox",
  "bincode",
  "if_chain",
+ "once_cell",
  "rand",
  "serde",
 ]

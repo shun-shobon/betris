@@ -47,7 +47,7 @@ impl Mino {
                 )),
             ))
             .with_children(|parent| {
-                for &block_pos in self.shape.blocks().iter() {
+                for &block_pos in self.shape.blocks(Angle::default()).iter() {
                     Block::spawn_with_parent(parent, self.shape.color(), block_size, block_pos);
                 }
             })
@@ -55,19 +55,7 @@ impl Mino {
     }
 }
 
-impl From<u8> for Angle {
-    fn from(angle: u8) -> Self {
-        match angle {
-            0 => Self::Deg0,
-            1 => Self::Deg90,
-            2 => Self::Deg180,
-            3 => Self::Deg270,
-            _ => unreachable!(),
-        }
-    }
-}
-
-impl From<Angle> for u8 {
+impl From<Angle> for usize {
     fn from(angle: Angle) -> Self {
         match angle {
             Angle::Deg0 => 0,

@@ -52,6 +52,12 @@ pub fn keyboard_input_system(
         }
     }
 
+    if keyboard_input.just_pressed(KeyCode::Z) {
+        move_event_writer.send(MoveEvent::Rotate(Direction::Left));
+    } else if keyboard_input.just_pressed(KeyCode::X) {
+        move_event_writer.send(MoveEvent::Rotate(Direction::Right));
+    }
+
     if keyboard_input.just_pressed(KeyCode::Down) {
         move_event_writer.send(MoveEvent::StartSoftDrop);
     } else if keyboard_input.just_released(KeyCode::Down) {
