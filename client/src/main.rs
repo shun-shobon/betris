@@ -1,6 +1,5 @@
 #[warn(clippy::all, clippy::pedantic)]
 #[allow(clippy::cast_lossless)]
-pub mod block;
 pub mod field;
 pub mod input;
 pub mod mino;
@@ -16,8 +15,7 @@ use bevy::{
     prelude::*,
     render::camera::ScalingMode,
 };
-use block::transform_system;
-use field::field_block_system;
+use field::block::field_block_system;
 use input::{keyboard_input_system, KeyboardRepeatTimer};
 use mino::event::{handle_place_mino, handle_spawn_mino, PlaceMinoEvent, SpawnMinoEvent};
 use movement::{handle_move_event, MoveEvent};
@@ -82,7 +80,6 @@ fn main() {
             )
                 .run_if(in_state(AppState::Playing)),
         )
-        .add_systems(PostUpdate, transform_system)
         .run();
 }
 

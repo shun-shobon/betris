@@ -1,8 +1,7 @@
 use bevy::prelude::*;
 
 use crate::{
-    block::Block,
-    field::{Field, FieldBlock, LocalField, FIELD_MAX_HEIGHT, FIELD_WIDTH},
+    field::{Field, LocalField, FIELD_MAX_HEIGHT, FIELD_WIDTH},
     mino::{shape::MinoShape, Angle, Mino, MinoPosition},
     position::Position,
     timer::{DROP_INTERVAL, SOFT_DROP_INTERVAL},
@@ -35,14 +34,13 @@ impl Direction {
 
 pub fn handle_move_event(
     mut move_events: EventReader<MoveEvent>,
-    mut mino_query: Query<(&mut Mino, &mut MinoPosition, &Children)>,
+    mut mino_query: Query<(&mut Mino, &mut MinoPosition)>,
     mut field_query: Query<(&Field, &mut LocalField), With<Field>>,
-    mut blocks_query: Query<(&mut Block, &Parent)>,
 ) {
     for event in move_events.iter() {
         match event {
             MoveEvent::Move(direction) => {
-                let Ok((mino, mut mino_pos, _ )) = mino_query.get_single_mut() else { continue; };
+                let Ok((mino, mut mino_pos)) = mino_query.get_single_mut() else { continue; };
                 let Ok((field, mut local_field)) = field_query.get_single_mut() else { continue; };
 
                 let collision = is_collision(
@@ -70,7 +68,7 @@ pub fn handle_move_event(
                 }
             }
             MoveEvent::Rotate(direction) => {
-                let Ok((mut mino, mut mino_pos, mino_blocks )) = mino_query.get_single_mut() else { continue; };
+                let Ok((mut mino, mut mino_pos)) = mino_query.get_single_mut() else { continue; };
                 let Ok((field, mut local_field)) = field_query.get_single_mut() else { continue; };
 
                 let new_angle = get_new_angle(mino.angle, *direction);
@@ -87,14 +85,6 @@ pub fn handle_move_event(
                     mino.angle = new_angle;
                     local_field.lock_down_timer.reset();
                     local_field.lock_down_timer.pause();
-
-                    // ミノのブロックの位置を更新
-                    for (new_block_pos, mino_block) in
-                        mino.shape.blocks(mino.angle).iter().zip(mino_blocks.iter())
-                    {
-                        let (mut block_pos, _) = blocks_query.get_mut(*mino_block).unwrap();
-                        block_pos.position = *new_block_pos;
-                    }
                 }
             }
             MoveEvent::StartSoftDrop => {
@@ -170,7 +160,7 @@ fn is_collision(
                 && pos.x < FIELD_WIDTH
                 && 0 <= pos.y
                 && pos.y < FIELD_MAX_HEIGHT
-                && field.lines[pos.y as usize][pos.x as usize] == FieldBlock::Empty
+                && field.lines[pos.y as usize][pos.x as usize].is_empty()
         })
 }
 

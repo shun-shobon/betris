@@ -1,6 +1,6 @@
 use super::{shape::MinoShape, Angle, Mino};
 use crate::{
-    field::{Field, FieldBlock, LocalField, FIELD_MAX_HEIGHT, FIELD_WIDTH},
+    field::{block::FieldBlock, Field, LocalField, FIELD_MAX_HEIGHT, FIELD_WIDTH},
     net::PlayerId,
     position::Position,
 };
@@ -20,14 +20,14 @@ pub struct PlaceMinoEvent {
 pub fn handle_spawn_mino(
     mut commands: Commands,
     mut spawn_mino_events: EventReader<SpawnMinoEvent>,
-    mut field_query: Query<(Entity, &Field, &mut LocalField)>,
+    mut field_query: Query<(Entity, &mut LocalField)>,
 ) {
     for _ in spawn_mino_events.iter() {
-        let Ok((field_entity, field, mut local_field)) = field_query.get_single_mut() else { continue; };
+        let Ok((field_entity, mut local_field)) = field_query.get_single_mut() else { continue; };
 
         let mino_shape = local_field.random_bag.next().unwrap();
 
-        let mino_entity = Mino::new(mino_shape).spawn(&mut commands, field.block_size);
+        let mino_entity = Mino::new(mino_shape).spawn(&mut commands);
         commands.entity(field_entity).add_child(mino_entity);
     }
 }

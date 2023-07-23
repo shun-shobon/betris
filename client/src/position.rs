@@ -1,4 +1,4 @@
-use crate::field::{FIELD_HEIGHT, FIELD_WIDTH};
+use crate::field::{block::BLOCK_SIZE, FIELD_HEIGHT, FIELD_WIDTH};
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::ops::{Add, AddAssign, Sub, SubAssign};
@@ -10,10 +10,10 @@ pub struct Position {
 }
 
 impl Position {
-    pub fn translation(self, block_size: f32) -> Vec3 {
+    pub fn translation(self) -> Vec3 {
         Vec3::new(
-            (self.x as f32 - FIELD_WIDTH as f32 / 2.) * block_size + block_size / 2.,
-            (self.y as f32 - FIELD_HEIGHT as f32 / 2.) * block_size + block_size / 2.,
+            (self.x as f32 - FIELD_WIDTH as f32 / 2.) * BLOCK_SIZE + BLOCK_SIZE / 2.,
+            (self.y as f32 - FIELD_HEIGHT as f32 / 2.) * BLOCK_SIZE + BLOCK_SIZE / 2.,
             0.,
         )
     }

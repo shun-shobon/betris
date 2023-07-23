@@ -1,5 +1,4 @@
 use crate::{
-    block::BLOCK_SIZE,
     field::{Field, LocalField},
     mino::{
         event::{PlaceMinoEvent, SpawnMinoEvent},
@@ -75,12 +74,12 @@ pub fn waiting_for_player_system(
     info!("All player has joined, starting game!");
 
     let my_player_id = PlayerId(socket.id().unwrap());
-    Field::new(my_player_id, BLOCK_SIZE).spawn(&mut commands, true, Vec3::new(-500., 0., 0.));
+    Field::new(my_player_id).spawn(&mut commands, true, Vec3::new(-500., 0., 0.));
 
     for peer in socket.connected_peers() {
         let player_id = PlayerId(peer);
         // TODO: 大人数でも正しく並べる
-        Field::new(player_id, BLOCK_SIZE).spawn(&mut commands, false, Vec3::new(500., 0., 0.));
+        Field::new(player_id).spawn(&mut commands, false, Vec3::new(500., 0., 0.));
     }
 
     app_state.set(AppState::Playing);

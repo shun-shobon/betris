@@ -3,7 +3,6 @@ pub mod shape;
 
 use self::shape::MinoShape;
 use crate::{
-    block::Block,
     field::{FIELD_HEIGHT, FIELD_WIDTH},
     position::Position,
 };
@@ -36,7 +35,7 @@ impl Mino {
         }
     }
 
-    pub fn spawn(self, commands: &mut Commands, block_size: f32) -> Entity {
+    pub fn spawn(self, commands: &mut Commands) -> Entity {
         commands
             .spawn((
                 SpatialBundle::default(),
@@ -46,11 +45,6 @@ impl Mino {
                     FIELD_HEIGHT - 2, // TODO: 20行目が埋まっている場合は21行目に出現させる
                 )),
             ))
-            .with_children(|parent| {
-                for &block_pos in self.shape.blocks(Angle::default()).iter() {
-                    Block::spawn_with_parent(parent, self.shape.color(), block_size, block_pos);
-                }
-            })
             .id()
     }
 }
