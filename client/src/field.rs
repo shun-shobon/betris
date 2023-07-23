@@ -1,5 +1,8 @@
 use crate::{
+    block::BLOCK_INSET,
+    mino::shape::MinoShape,
     net::PlayerId,
+    position::Position,
     random::RandomBag,
     timer::{DROP_INTERVAL, LOCK_DOWN_INTERVAL},
 };
@@ -12,7 +15,7 @@ pub const FIELD_MAX_HEIGHT: i8 = FIELD_HEIGHT + 20;
 
 const FIELD_GRID_WIDTH: f32 = 1.;
 
-type Lines = [[bool; FIELD_WIDTH as usize]; FIELD_MAX_HEIGHT as usize];
+type Lines = [[FieldBlock; FIELD_WIDTH as usize]; FIELD_MAX_HEIGHT as usize];
 
 #[derive(Component)]
 pub struct Field {
@@ -28,9 +31,23 @@ pub struct LocalField {
     pub lock_down_timer: Timer,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Component)]
+pub enum FieldBlock {
+    #[default]
+    Empty,
+    Garbage,
+    I,
+    O,
+    T,
+    S,
+    Z,
+    J,
+    L,
+}
+
 impl Field {
     pub fn new(player_id: PlayerId, block_size: f32) -> Self {
-        let lines = [[false; FIELD_WIDTH as usize]; FIELD_MAX_HEIGHT as usize];
+        let lines = [[FieldBlock::default(); FIELD_WIDTH as usize]; FIELD_MAX_HEIGHT as usize];
 
         Self {
             player_id,
@@ -57,6 +74,90 @@ impl Field {
                 .with_children(|parent| spawn_grid(parent, block_size))
                 .id()
         }
+    }
+}
+
+impl FieldBlock {
+    pub fn color(&self) -> Color {
+        use FieldBlock::*;
+
+        match self {
+            I => Color::rgb(0.0, 1.0, 1.0),
+            J => Color::rgb(0.0, 0.0, 1.0),
+            L => Color::rgb(1.0, 0.5, 0.0),
+            O => Color::rgb(1.0, 1.0, 0.0),
+            S => Color::rgb(0.0, 1.0, 0.0),
+            T => Color::rgb(0.5, 0.0, 1.0),
+            Z => Color::rgb(1.0, 0.0, 0.0),
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self == &Self::Empty
+    }
+}
+
+impl From<MinoShape> for FieldBlock {
+    fn from(shape: MinoShape) -> Self {
+        match shape {
+            MinoShape::I => FieldBlock::I,
+            MinoShape::J => FieldBlock::J,
+            MinoShape::L => FieldBlock::L,
+            MinoShape::O => FieldBlock::O,
+            MinoShape::S => FieldBlock::S,
+            MinoShape::T => FieldBlock::T,
+            MinoShape::Z => FieldBlock::Z,
+        }
+    }
+}
+
+pub fn field_block_system(
+    mut commands: Commands,
+    field_query: Query<(Entity, &Field)>,
+    field_block_query: Query<Entity, With<FieldBlock>>,
+) {
+    for block_entity in field_block_query.iter() {
+        commands.entity(block_entity).despawn_recursive();
+    }
+
+    for (field_entity, field) in field_query.iter() {
+        let field_block_bundles = field
+            .lines
+            .iter()
+            .enumerate()
+            .flat_map(|(y, row)| {
+                row.iter()
+                    .enumerate()
+                    .filter(|(_, &block)| block != FieldBlock::Empty)
+                    .map(move |(x, &block)| {
+                        let pos = Position::new(x as i8, y as i8);
+
+                        let bundle = SpriteBundle {
+                            transform: Transform::from_translation(
+                                pos.translation(field.block_size),
+                            ),
+                            sprite: Sprite {
+                                color: block.color(),
+                                custom_size: Some(Vec2::new(
+                                    field.block_size - BLOCK_INSET,
+                                    field.block_size - BLOCK_INSET,
+                                )),
+                                ..default()
+                            },
+                            ..default()
+                        };
+
+                        (bundle, block)
+                    })
+            })
+            .collect::<Vec<_>>();
+
+        commands.entity(field_entity).with_children(|parent| {
+            for bundle in field_block_bundles {
+                parent.spawn(bundle);
+            }
+        });
     }
 }
 

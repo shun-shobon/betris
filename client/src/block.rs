@@ -7,7 +7,7 @@ use bevy::prelude::*;
 use if_chain::if_chain;
 
 pub const BLOCK_SIZE: f32 = 40.0;
-pub const BLOCK_INSET: i32 = 1;
+pub const BLOCK_INSET: f32 = 1.0;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Component)]
 pub struct Block {
@@ -20,10 +20,7 @@ macro_rules! spawn_block {
             .spawn(SpriteBundle {
                 sprite: Sprite {
                     color: $color,
-                    custom_size: Some(Vec2::new(
-                        $size - BLOCK_INSET as f32,
-                        $size - BLOCK_INSET as f32,
-                    )),
+                    custom_size: Some(Vec2::new($size - BLOCK_INSET, $size - BLOCK_INSET)),
                     ..default()
                 },
                 ..default()

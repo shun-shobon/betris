@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::{
     block::Block,
-    field::{Field, LocalField, FIELD_WIDTH},
+    field::{Field, FieldBlock, LocalField, FIELD_MAX_HEIGHT, FIELD_WIDTH},
     mino::{shape::MinoShape, Angle, Mino, MinoPosition},
     position::Position,
     timer::{DROP_INTERVAL, SOFT_DROP_INTERVAL},
@@ -36,25 +36,20 @@ impl Direction {
 pub fn handle_move_event(
     mut move_events: EventReader<MoveEvent>,
     mut mino_query: Query<(&mut Mino, &mut MinoPosition, &Children)>,
-    mut field_query: Query<(Entity, &mut LocalField), With<Field>>,
+    mut field_query: Query<(&Field, &mut LocalField), With<Field>>,
     mut blocks_query: Query<(&mut Block, &Parent)>,
 ) {
     for event in move_events.iter() {
         match event {
             MoveEvent::Move(direction) => {
                 let Ok((mino, mut mino_pos, _ )) = mino_query.get_single_mut() else { continue; };
-                let Ok((field_entity, mut local_field)) = field_query.get_single_mut() else { continue; };
-                let field_blocks = blocks_query
-                    .iter()
-                    .filter(|(_, parent)| parent.get() == field_entity)
-                    .map(|(block, _)| block.position)
-                    .collect::<Vec<_>>();
+                let Ok((field, mut local_field)) = field_query.get_single_mut() else { continue; };
 
                 let collision = is_collision(
                     mino.shape.blocks(mino.angle),
                     &mino_pos,
                     direction.move_delta(),
-                    &field_blocks,
+                    field,
                 );
 
                 if !collision {
@@ -67,7 +62,7 @@ pub fn handle_move_event(
                     mino.shape.blocks(mino.angle),
                     &mino_pos,
                     Direction::Down.move_delta(),
-                    &field_blocks,
+                    field,
                 );
                 if is_landed {
                     local_field.drop_timer.reset();
@@ -76,23 +71,13 @@ pub fn handle_move_event(
             }
             MoveEvent::Rotate(direction) => {
                 let Ok((mut mino, mut mino_pos, mino_blocks )) = mino_query.get_single_mut() else { continue; };
-                let Ok((field_entity, mut local_field)) = field_query.get_single_mut() else { continue; };
-                let field_blocks = blocks_query
-                    .iter()
-                    .filter(|(_, parent)| parent.get() == field_entity)
-                    .map(|(block, _)| block.position)
-                    .collect::<Vec<_>>();
+                let Ok((field, mut local_field)) = field_query.get_single_mut() else { continue; };
 
                 let new_angle = get_new_angle(mino.angle, *direction);
                 let deltas = get_srs_deltas(mino.angle, new_angle, mino.shape);
 
                 if let Some(delta) = deltas.iter().find_map(|delta| {
-                    if !is_collision(
-                        mino.shape.blocks(new_angle),
-                        &mino_pos,
-                        *delta,
-                        &field_blocks,
-                    ) {
+                    if !is_collision(mino.shape.blocks(new_angle), &mino_pos, *delta, field) {
                         Some(*delta)
                     } else {
                         None
@@ -173,25 +158,20 @@ fn get_srs_deltas(angle: Angle, new_angle: Angle, shape: MinoShape) -> &'static 
 
 fn is_collision(
     mino_blocks: &[Position],
-    mino_pos: &MinoPosition,
+    MinoPosition(mino_pos): &MinoPosition,
     delta: Position,
-    field_blocks: &[Position],
+    field: &Field,
 ) -> bool {
-    let mut collision = false;
-
-    for &mino_block_pos in mino_blocks {
-        let mino_block_new_pos = mino_pos.0 + mino_block_pos + delta;
-        if mino_block_new_pos.x < 0
-            || FIELD_WIDTH <= mino_block_new_pos.x
-            || mino_block_new_pos.y < 0
-            || field_blocks.contains(&mino_block_new_pos)
-        {
-            collision = true;
-            break;
-        }
-    }
-
-    collision
+    !mino_blocks
+        .iter()
+        .map(|&mino_block_pos| mino_block_pos + *mino_pos + delta)
+        .all(|pos| {
+            0 <= pos.x
+                && pos.x < FIELD_WIDTH
+                && 0 <= pos.y
+                && pos.y < FIELD_MAX_HEIGHT
+                && field.lines[pos.y as usize][pos.x as usize] == FieldBlock::Empty
+        })
 }
 
 static SRS_DELTAS_0_TO_90: &[Position] = &[
