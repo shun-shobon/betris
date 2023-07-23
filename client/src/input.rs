@@ -5,7 +5,7 @@ use bevy::prelude::*;
 use crate::movement::{Direction, MoveEvent};
 
 const MOVE_REPLEAT_DELAY: Duration = Duration::from_millis(300);
-const MOVE_REPLEAT_INTERVAL: Duration = Duration::from_millis(50);
+const MOVE_REPLEAT_INTERVAL: Duration = Duration::from_millis(30);
 
 #[derive(Resource)]
 pub struct KeyboardRepeatTimer(Timer);
