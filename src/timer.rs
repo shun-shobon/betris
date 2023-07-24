@@ -1,16 +1,30 @@
 use crate::{
-    field::{Field, LocalField},
+    field::{local::LocalField, Field},
     movement::{Direction, MoveEvent},
     net::{LocalPlaceMinoEvent, Players},
 };
 use bevy::prelude::*;
-use if_chain::if_chain;
 use std::time::Duration;
 
 pub const DROP_INTERVAL: Duration = Duration::from_millis(1000);
 pub const SOFT_DROP_INTERVAL: Duration = Duration::from_millis(50);
 pub const LOCK_DOWN_INTERVAL: Duration = Duration::from_millis(500);
 pub const TARGET_CHANGE_INTERVAL: Duration = Duration::from_millis(1000);
+
+pub fn create_drop_timer() -> Timer {
+    Timer::new(DROP_INTERVAL, TimerMode::Repeating)
+}
+
+pub fn create_lock_down_timer() -> Timer {
+    let mut timer = Timer::new(LOCK_DOWN_INTERVAL, TimerMode::Once);
+    timer.pause();
+
+    timer
+}
+
+pub fn create_target_change_timer() -> Timer {
+    Timer::new(TARGET_CHANGE_INTERVAL, TimerMode::Repeating)
+}
 
 pub fn timer_system(
     time: Res<Time>,
@@ -33,19 +47,23 @@ pub fn timer_system(
         local_place_mino_event_writer.send(LocalPlaceMinoEvent);
     }
 
-    if_chain! {
-        if local_field.target_change_timer.tick(time.delta()).just_finished();
-        if let Some(target_player_id) = local_field.target_player_id;
-        then {
+    if local_field
+        .target_change_timer
+        .tick(time.delta())
+        .just_finished()
+    {
+        let next_target_player_id = if let Some(target_player_id) = local_field.target_player_id {
             let target_player_idx = players
                 .0
                 .iter()
                 .position(|player_id| *player_id == target_player_id)
                 .unwrap();
             let next_target_player_idx = (target_player_idx + 1) % players.0.len();
-            let next_target_player_id = players.0[next_target_player_idx];
+            Some(players.0[next_target_player_idx])
+        } else {
+            players.0.first().copied()
+        };
 
-            local_field.target_player_id = Some(next_target_player_id);
-        }
+        local_field.target_player_id = next_target_player_id;
     }
 }

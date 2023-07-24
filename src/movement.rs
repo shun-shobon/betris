@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::{
-    field::{Field, LocalField, FIELD_MAX_HEIGHT, FIELD_WIDTH},
+    field::{local::LocalField, Field, FIELD_MAX_HEIGHT, FIELD_WIDTH},
     mino::{shape::MinoShape, Angle, Mino, TSpin},
     position::Position,
     timer::{DROP_INTERVAL, SOFT_DROP_INTERVAL},

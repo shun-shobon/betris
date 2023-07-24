@@ -13,13 +13,16 @@ pub mod timer;
 use bevy::{
     diagnostic::FrameTimeDiagnosticsPlugin, log::LogPlugin, prelude::*, render::camera::ScalingMode,
 };
-use field::block::field_block_system;
+use field::{
+    block::field_block_system,
+    local::{garbage_line_system, handle_receive_garbage, ReceiveGarbageEvent},
+};
 use fps::{fps_system, setup_fps};
 use input::{keyboard_input_system, KeyboardRepeatTimer};
 use mino::event::{handle_place_mino, handle_spawn_mino, PlaceMinoEvent, SpawnMinoEvent};
 use movement::{handle_move_event, MoveEvent};
 use net::{
-    handle_local_send_lines_event, handle_local_spawn_mino_event, recieve_message_system,
+    handle_local_send_garbage_event, handle_local_spawn_mino_event, receive_message_system,
     setup_matchbox_socket, waiting_for_player_system, LocalPlaceMinoEvent, LocalSendGarbageEvent,
 };
 use timer::timer_system;
@@ -52,6 +55,7 @@ fn main() {
         .add_event::<SpawnMinoEvent>()
         .add_event::<PlaceMinoEvent>()
         .add_event::<MoveEvent>()
+        .add_event::<ReceiveGarbageEvent>()
         .add_event::<LocalPlaceMinoEvent>()
         .add_event::<LocalSendGarbageEvent>()
         .insert_resource(KeyboardRepeatTimer::default())
@@ -63,18 +67,19 @@ fn main() {
             waiting_for_player_system.run_if(in_state(AppState::MatchMaking)),
         )
         .add_systems(OnEnter(AppState::Playing), setup_game)
-        .add_systems(PreUpdate, field_block_system)
+        .add_systems(PreUpdate, (field_block_system, garbage_line_system))
         .add_systems(
             Update,
             (
                 timer_system,
                 keyboard_input_system,
-                recieve_message_system,
+                receive_message_system,
                 handle_move_event,
                 handle_spawn_mino,
                 handle_place_mino,
+                handle_receive_garbage,
                 handle_local_spawn_mino_event,
-                handle_local_send_lines_event,
+                handle_local_send_garbage_event,
             )
                 .run_if(in_state(AppState::Playing)),
         )

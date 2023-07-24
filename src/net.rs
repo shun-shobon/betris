@@ -1,5 +1,8 @@
 use crate::{
-    field::{Field, LocalField},
+    field::{
+        local::{LocalField, ReceiveGarbageEvent},
+        Field,
+    },
     mino::{
         event::{PlaceMinoEvent, SpawnMinoEvent},
         Mino,
@@ -10,7 +13,7 @@ use bevy::prelude::*;
 use bevy_matchbox::prelude::*;
 use serde::{Deserialize, Serialize};
 
-pub const NUM_PLAYERS: usize = 1;
+pub const NUM_PLAYERS: usize = 2;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PlayerId(PeerId);
@@ -30,7 +33,7 @@ pub struct LocalSendGarbageEvent {
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 enum Message {
     MinoPlaced { mino: Mino },
-    LineSent { lines: u8 },
+    GarbageSent { lines: u8 },
 }
 
 impl From<PlaceMinoEvent> for Message {
@@ -87,8 +90,9 @@ pub fn waiting_for_player_system(
     app_state.set(AppState::Playing);
 }
 
-pub fn recieve_message_system(
+pub fn receive_message_system(
     mut socket: ResMut<MatchboxSocket<SingleChannel>>,
+    mut receive_garbage_events: EventWriter<ReceiveGarbageEvent>,
     mut place_mino_event_writer: EventWriter<PlaceMinoEvent>,
 ) {
     for (peer_id, message) in socket.receive() {
@@ -100,8 +104,9 @@ pub fn recieve_message_system(
                     mino,
                 });
             }
-            Message::LineSent { lines } => {
+            Message::GarbageSent { lines } => {
                 info!("LineSent: {}", lines);
+                receive_garbage_events.send(ReceiveGarbageEvent(lines));
             }
         }
     }
@@ -137,12 +142,12 @@ pub fn handle_local_spawn_mino_event(
     }
 }
 
-pub fn handle_local_send_lines_event(
+pub fn handle_local_send_garbage_event(
     mut socket: ResMut<MatchboxSocket<SingleChannel>>,
     mut local_send_lines_events: EventReader<LocalSendGarbageEvent>,
 ) {
     for event in local_send_lines_events.iter() {
-        let message = Message::LineSent { lines: event.lines };
+        let message = Message::GarbageSent { lines: event.lines };
         let message = bincode::serialize(&message).unwrap().into_boxed_slice();
 
         let Some(peer_id) = socket.connected_peers().find(|&peer_id| peer_id == event.player_id.0) else { continue; };

@@ -1,6 +1,6 @@
 use super::{Mino, TSpin};
 use crate::{
-    field::{block::FieldBlock, Field, LocalField, FIELD_MAX_HEIGHT, FIELD_WIDTH},
+    field::{block::FieldBlock, local::LocalField, Field, FIELD_MAX_HEIGHT, FIELD_WIDTH},
     net::{LocalSendGarbageEvent, PlayerId},
 };
 use bevy::prelude::*;

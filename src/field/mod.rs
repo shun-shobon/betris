@@ -1,11 +1,11 @@
 pub mod block;
+pub mod local;
 
-use self::block::{FieldBlock, BLOCK_SIZE};
-use crate::{
-    net::PlayerId,
-    random::RandomBag,
-    timer::{DROP_INTERVAL, LOCK_DOWN_INTERVAL, TARGET_CHANGE_INTERVAL},
+use self::{
+    block::{FieldBlock, BLOCK_SIZE},
+    local::LocalField,
 };
+use crate::net::PlayerId;
 use bevy::prelude::*;
 
 pub const FIELD_WIDTH: i8 = 10;
@@ -21,18 +21,6 @@ type Lines = [[FieldBlock; FIELD_WIDTH as usize]; FIELD_MAX_HEIGHT as usize];
 pub struct Field {
     pub player_id: PlayerId,
     pub lines: Lines,
-}
-
-#[allow(clippy::module_name_repetitions)]
-#[derive(Component)]
-pub struct LocalField {
-    pub can_back_to_back: bool,
-    pub len: u8,
-    pub target_player_id: Option<PlayerId>,
-    pub random_bag: RandomBag,
-    pub drop_timer: Timer,
-    pub lock_down_timer: Timer,
-    pub target_change_timer: Timer,
 }
 
 impl Field {
@@ -56,23 +44,6 @@ impl Field {
                 .id()
         } else {
             field_commands.with_children(spawn_grid).id()
-        }
-    }
-}
-
-impl Default for LocalField {
-    fn default() -> Self {
-        let mut lock_down_timer = Timer::new(LOCK_DOWN_INTERVAL, TimerMode::Once);
-        lock_down_timer.pause();
-
-        Self {
-            can_back_to_back: false,
-            len: 0,
-            target_player_id: None,
-            random_bag: RandomBag::new(),
-            drop_timer: Timer::new(DROP_INTERVAL, TimerMode::Repeating),
-            lock_down_timer,
-            target_change_timer: Timer::new(TARGET_CHANGE_INTERVAL, TimerMode::Repeating),
         }
     }
 }
