@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::{
-    mino::{shape::MinoShape, Mino, MinoPosition},
+    mino::{shape::MinoShape, Mino},
     position::Position,
 };
 
@@ -71,7 +71,7 @@ pub fn field_block_system(
     mut commands: Commands,
     field_block_query: Query<Entity, With<FieldBlock>>,
     field_query: Query<(Entity, &Field)>,
-    mino_query: Query<(Entity, &Mino, &MinoPosition)>,
+    mino_query: Query<(Entity, &Mino)>,
 ) {
     for block_entity in field_block_query.iter() {
         commands.entity(block_entity).despawn_recursive();
@@ -98,12 +98,12 @@ pub fn field_block_system(
         });
     }
 
-    for (mino_entity, mino, mino_pos) in mino_query.iter() {
+    for (mino_entity, mino) in mino_query.iter() {
         let mino_block_bundles = mino
             .shape
             .blocks(mino.angle)
             .iter()
-            .map(|&pos| pos + mino_pos.0)
+            .map(|&pos| pos + mino.pos)
             .map(|pos| create_field_block_bundle(pos, mino.shape.into()))
             .collect::<Vec<_>>();
 

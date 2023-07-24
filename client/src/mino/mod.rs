@@ -9,13 +9,20 @@ use crate::{
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Copy, Component)]
-pub struct MinoPosition(pub Position);
-
-#[derive(Debug, Clone, Copy, Component)]
+#[derive(Debug, Clone, Copy, Component, Serialize, Deserialize)]
 pub struct Mino {
+    pub pos: Position,
     pub angle: Angle,
     pub shape: MinoShape,
+    pub t_spin: TSpin,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub enum TSpin {
+    #[default]
+    None,
+    Mini,
+    Full,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
@@ -30,22 +37,18 @@ pub enum Angle {
 impl Mino {
     pub fn new(shape: MinoShape) -> Self {
         Self {
-            angle: Angle::Deg0,
+            pos: Position::new(
+                (FIELD_WIDTH - shape.size()) / 2,
+                FIELD_HEIGHT - 2, // TODO: 20行目が埋まっている場合は21行目に出現させる
+            ),
+            angle: Angle::default(),
             shape,
+            t_spin: TSpin::default(),
         }
     }
 
     pub fn spawn(self, commands: &mut Commands) -> Entity {
-        commands
-            .spawn((
-                SpatialBundle::default(),
-                self,
-                MinoPosition(Position::new(
-                    (FIELD_WIDTH - self.shape.size()) / 2,
-                    FIELD_HEIGHT - 2, // TODO: 20行目が埋まっている場合は21行目に出現させる
-                )),
-            ))
-            .id()
+        commands.spawn((SpatialBundle::default(), self)).id()
     }
 }
 

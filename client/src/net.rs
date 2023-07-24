@@ -2,10 +2,8 @@ use crate::{
     field::{Field, LocalField},
     mino::{
         event::{PlaceMinoEvent, SpawnMinoEvent},
-        shape::MinoShape,
-        Angle, Mino, MinoPosition,
+        Mino,
     },
-    position::Position,
     AppState,
 };
 use bevy::prelude::*;
@@ -20,22 +18,21 @@ pub struct PlayerId(PeerId);
 #[derive(Event)]
 pub struct LocalPlaceMinoEvent;
 
+#[derive(Event)]
+pub struct LocalSendLinesEvent {
+    pub player_id: PlayerId,
+    pub lines: u8,
+}
+
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 enum Message {
-    MinoPlaced {
-        pos: Position,
-        angle: Angle,
-        shape: MinoShape,
-    },
+    MinoPlaced { mino: Mino },
+    LineSent { lines: u8 },
 }
 
 impl From<PlaceMinoEvent> for Message {
     fn from(event: PlaceMinoEvent) -> Self {
-        Self::MinoPlaced {
-            pos: event.pos,
-            angle: event.angle,
-            shape: event.shape,
-        }
+        Self::MinoPlaced { mino: event.mino }
     }
 }
 
@@ -91,14 +88,15 @@ pub fn recieve_message_system(
 ) {
     for (peer_id, message) in socket.receive() {
         match bincode::deserialize(&message).unwrap() {
-            Message::MinoPlaced { pos, angle, shape } => {
-                info!("MinoPlaced: {:?}", (pos, angle, shape));
+            Message::MinoPlaced { mino } => {
+                info!("MinoPlaced: {:?}", mino);
                 place_mino_event_writer.send(PlaceMinoEvent {
                     player_id: PlayerId(peer_id),
-                    pos,
-                    angle,
-                    shape,
+                    mino,
                 });
+            }
+            Message::LineSent { lines } => {
+                info!("LineSent: {}", lines);
             }
         }
     }
@@ -108,20 +106,18 @@ pub fn handle_local_spawn_mino_event(
     mut commands: Commands,
     mut socket: ResMut<MatchboxSocket<SingleChannel>>,
     field_query: Query<&Field, With<LocalField>>,
-    mut mino_query: Query<(Entity, &Mino, &MinoPosition)>,
+    mut mino_query: Query<(Entity, &Mino)>,
     mut local_place_mino_event_reader: EventReader<LocalPlaceMinoEvent>,
     mut place_mino_event_writer: EventWriter<PlaceMinoEvent>,
     mut spwan_mino_event_writer: EventWriter<SpawnMinoEvent>,
 ) {
     for _ in local_place_mino_event_reader.iter() {
         let Ok(field) = field_query.get_single() else { return; };
-        let (mino_entity, mino, mino_position) = mino_query.get_single_mut().unwrap();
+        let (mino_entity, &mino) = mino_query.get_single_mut().unwrap();
 
         let place_mino_event = PlaceMinoEvent {
             player_id: field.player_id,
-            pos: mino_position.0,
-            angle: mino.angle,
-            shape: mino.shape,
+            mino,
         };
 
         place_mino_event_writer.send(place_mino_event);
@@ -133,5 +129,18 @@ pub fn handle_local_spawn_mino_event(
             let message = bincode::serialize(&message).unwrap().into_boxed_slice();
             socket.send(message, *peer_id);
         }
+    }
+}
+
+pub fn handle_local_send_lines_event(
+    mut socket: ResMut<MatchboxSocket<SingleChannel>>,
+    mut local_send_lines_events: EventReader<LocalSendLinesEvent>,
+) {
+    for event in local_send_lines_events.iter() {
+        let message = Message::LineSent { lines: event.lines };
+        let message = bincode::serialize(&message).unwrap().into_boxed_slice();
+
+        let Some(peer_id) = socket.connected_peers().find(|&peer_id| peer_id == event.player_id.0) else { continue; };
+        socket.send(message, peer_id);
     }
 }

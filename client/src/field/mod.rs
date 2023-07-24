@@ -26,6 +26,9 @@ pub struct Field {
 #[allow(clippy::module_name_repetitions)]
 #[derive(Component)]
 pub struct LocalField {
+    pub can_back_to_back: bool,
+    pub len: u8,
+    pub target_player_id: Option<PlayerId>,
     pub random_bag: RandomBag,
     pub drop_timer: Timer,
     pub lock_down_timer: Timer,
@@ -62,6 +65,9 @@ impl Default for LocalField {
         lock_down_timer.pause();
 
         Self {
+            can_back_to_back: false,
+            len: 0,
+            target_player_id: None,
             random_bag: RandomBag::new(),
             drop_timer: Timer::new(DROP_INTERVAL, TimerMode::Repeating),
             lock_down_timer,
