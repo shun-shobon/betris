@@ -88,15 +88,15 @@ pub fn handle_move_event(
                 local_field.lock_down_timer.reset();
                 local_field.lock_down_timer.pause();
 
-                if mino.shape == MinoShape::T && is_t_spin(&mino, field) {
+                mino.t_spin = if is_t_spin(&mino, field) {
                     if is_t_spin_mini(&mino, field, delta) {
-                        mino.t_spin = TSpin::Mini;
+                        TSpin::Mini
                     } else {
-                        mino.t_spin = TSpin::Full;
+                        TSpin::Full
                     }
                 } else {
-                    mino.t_spin = TSpin::None;
-                }
+                    TSpin::None
+                };
             }
             MoveEvent::StartSoftDrop => {
                 let Ok((_, mut local_field)) = field_query.get_single_mut() else { continue; };
@@ -175,9 +175,13 @@ fn is_collision(
         })
 }
 
-// Tミノの四隅が3ブロック以上埋まっているとTスピン
+// Tミノであり，Tミノの四隅が3箇所以上埋まっているとT-Spin
 fn is_t_spin(mino: &Mino, field: &Field) -> bool {
-    T_SPIN_CHECK_POSITIONS
+    if mino.shape != MinoShape::T {
+        return false;
+    }
+
+    let fullfilled = T_SPIN_CHECK_POSITIONS
         .iter()
         .map(|&pos| pos + mino.pos)
         .filter(|pos| {
@@ -187,11 +191,12 @@ fn is_t_spin(mino: &Mino, field: &Field) -> bool {
                 && pos.y < FIELD_MAX_HEIGHT
                 && field.lines[pos.y as usize][pos.x as usize].is_empty())
         })
-        .count()
-        >= 3
+        .count();
+
+    fullfilled >= 3
 }
 
-// 回転補正が(±1, ±2)ではなく，Tミノの凸側の隅2マスが埋まっていないとTスピンミニ
+// T-Spinであり，回転補正が(±1, ±2)ではなく，Tミノの凸側の隅2箇所が埋まっていないとT-Spin Mini
 fn is_t_spin_mini(mino: &Mino, field: &Field, delta: Position) -> bool {
     if delta.x.abs() == 1 && delta.y.abs() == 2 {
         false

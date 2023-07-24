@@ -112,9 +112,12 @@ fn get_garbage_lines(
     local_field: &mut LocalField,
     field: &Field,
 ) -> u8 {
+    if clear_line_count == 0 {
+        return 0;
+    }
+
     // 基本のおじゃま行数
-    let lines = match (clear_line_count, mino.t_spin) {
-        (0, _) => return 0,
+    let basic = match (clear_line_count, mino.t_spin) {
         (1, TSpin::None) => 0,                    // Single
         (2, TSpin::None) => 1,                    // Double
         (3, TSpin::None) => 2,                    // Triple
@@ -127,34 +130,35 @@ fn get_garbage_lines(
     };
 
     // LENボーナス
-    let lines = match local_field.len {
-        0 => lines,
-        1..=3 => lines + 1,
-        4..=5 => lines + 2,
-        6..=7 => lines + 3,
-        8..=10 => lines + 4,
-        11.. => lines + 5,
+    let len_bonus = match local_field.len {
+        0 => 0,
+        1..=3 => 1,
+        4..=5 => 2,
+        6..=7 => 3,
+        8..=10 => 4,
+        11.. => 5,
     };
 
     // Back to Backの場合は+1
-    let lines = if local_field.can_back_to_back && is_difficult_clear(clear_line_count, mino) {
-        lines + 1
-    } else {
-        lines
-    };
+    let back_to_back_bonus =
+        if local_field.can_back_to_back && is_difficult_clear(clear_line_count, mino) {
+            1
+        } else {
+            0
+        };
 
     // パーフェクトクリアの場合は+10
-    let lines = if field
+    let perfect_clear_bonus = if field
         .lines
         .iter()
         .all(|line| line.iter().all(|block| block.is_empty()))
     {
-        lines + 10
+        10
     } else {
-        lines
+        0
     };
 
-    lines
+    basic + len_bonus + back_to_back_bonus + perfect_clear_bonus
 }
 
 // テトリスやTスピンといった難しいライン消去か
