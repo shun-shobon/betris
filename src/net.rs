@@ -15,6 +15,9 @@ pub const NUM_PLAYERS: usize = 1;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PlayerId(PeerId);
 
+#[derive(Resource)]
+pub struct Players(pub Vec<PlayerId>);
+
 #[derive(Event)]
 pub struct LocalPlaceMinoEvent;
 
@@ -73,12 +76,14 @@ pub fn waiting_for_player_system(
     let my_player_id = PlayerId(socket.id().unwrap());
     Field::new(my_player_id).spawn(&mut commands, true, Vec3::new(-500., 0., 0.));
 
-    for peer in socket.connected_peers() {
-        let player_id = PlayerId(peer);
+    let player_ids = socket.connected_peers().map(PlayerId).collect::<Vec<_>>();
+    for player_id in player_ids.iter() {
         // TODO: 大人数でも正しく並べる
-        Field::new(player_id).spawn(&mut commands, false, Vec3::new(500., 0., 0.));
+        Field::new(*player_id).spawn(&mut commands, false, Vec3::new(500., 0., 0.));
     }
 
+    let players = Players(player_ids);
+    commands.insert_resource(players);
     app_state.set(AppState::Playing);
 }
 

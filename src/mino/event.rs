@@ -109,7 +109,7 @@ fn handle_local_field(
 fn get_garbage_lines(
     clear_line_count: usize,
     mino: &Mino,
-    local_field: &mut LocalField,
+    local_field: &LocalField,
     field: &Field,
 ) -> u8 {
     if clear_line_count == 0 {

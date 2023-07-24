@@ -4,7 +4,7 @@ use self::block::{FieldBlock, BLOCK_SIZE};
 use crate::{
     net::PlayerId,
     random::RandomBag,
-    timer::{DROP_INTERVAL, LOCK_DOWN_INTERVAL},
+    timer::{DROP_INTERVAL, LOCK_DOWN_INTERVAL, TARGET_CHANGE_INTERVAL},
 };
 use bevy::prelude::*;
 
@@ -32,6 +32,7 @@ pub struct LocalField {
     pub random_bag: RandomBag,
     pub drop_timer: Timer,
     pub lock_down_timer: Timer,
+    pub target_change_timer: Timer,
 }
 
 impl Field {
@@ -71,6 +72,7 @@ impl Default for LocalField {
             random_bag: RandomBag::new(),
             drop_timer: Timer::new(DROP_INTERVAL, TimerMode::Repeating),
             lock_down_timer,
+            target_change_timer: Timer::new(TARGET_CHANGE_INTERVAL, TimerMode::Repeating),
         }
     }
 }
