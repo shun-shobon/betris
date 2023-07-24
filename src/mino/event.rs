@@ -1,7 +1,7 @@
 use super::{Mino, TSpin};
 use crate::{
     field::{block::FieldBlock, Field, LocalField, FIELD_MAX_HEIGHT, FIELD_WIDTH},
-    net::{LocalSendLinesEvent, PlayerId},
+    net::{LocalSendGarbageEvent, PlayerId},
 };
 use bevy::prelude::*;
 use if_chain::if_chain;
@@ -33,7 +33,7 @@ pub fn handle_spawn_mino(
 pub fn handle_place_mino(
     mut place_mino_events: EventReader<PlaceMinoEvent>,
     mut field_query: Query<(&mut Field, Option<&mut LocalField>)>,
-    mut local_send_line_events: EventWriter<LocalSendLinesEvent>,
+    mut local_send_line_events: EventWriter<LocalSendGarbageEvent>,
 ) {
     for PlaceMinoEvent { player_id, mino } in place_mino_events.iter() {
         let Some((mut field, local_field)) = field_query.iter_mut().find(|(field, _)| field.player_id == *player_id) else { continue; };
@@ -81,29 +81,49 @@ fn handle_local_field(
     local_field: &mut LocalField,
     clear_line_count: usize,
     mino: &Mino,
-    local_send_line_events: &mut EventWriter<LocalSendLinesEvent>,
+    local_send_line_events: &mut EventWriter<LocalSendGarbageEvent>,
 ) {
-    // 基本のおじゃま行
-    let lines = match clear_line_count {
-        2 => 1,
-        3 => 2,
-        4.. => 4,
-        _ => 0,
-    };
+    let garbage_lines = get_garbage_lines(clear_line_count, mino, local_field, field);
 
-    // Tスピンの場合は2倍
-    let lines = match mino.t_spin {
-        TSpin::None | TSpin::Mini => lines,
-        TSpin::Full => lines * 2,
-    };
-
-    let is_difficult_clear = clear_line_count >= 4 || mino.t_spin != TSpin::None;
-
-    // back-to-backの場合は+1
-    let lines = if local_field.can_back_to_back && is_difficult_clear {
-        lines + 1
+    // フィールドの状態を更新
+    if clear_line_count != 0 {
+        local_field.can_back_to_back = is_difficult_clear(clear_line_count, mino);
+        local_field.len += 1;
     } else {
-        lines
+        local_field.len = 0;
+    }
+
+    // おじゃま行を送る
+    if_chain! {
+        if garbage_lines != 0;
+        if let Some(target_player_id) = local_field.target_player_id;
+        then {
+            local_send_line_events.send(LocalSendGarbageEvent {
+                player_id: target_player_id,
+                lines: garbage_lines,
+            })
+        }
+    }
+}
+
+fn get_garbage_lines(
+    clear_line_count: usize,
+    mino: &Mino,
+    local_field: &mut LocalField,
+    field: &Field,
+) -> u8 {
+    // 基本のおじゃま行数
+    let lines = match (clear_line_count, mino.t_spin) {
+        (0, _) => return 0,
+        (1, TSpin::None) => 0,                    // Single
+        (2, TSpin::None) => 1,                    // Double
+        (3, TSpin::None) => 2,                    // Triple
+        (4, TSpin::None) => 4,                    // Tetris
+        (1, TSpin::Mini) | (2, TSpin::Mini) => 0, // T-Spin Mini
+        (1, TSpin::Full) => 2,                    // T-Spin Single
+        (2, TSpin::Full) => 4,                    // T-Spin Double
+        (3, TSpin::Full) => 6,                    // T-Spin Triple
+        _ => unreachable!(),
     };
 
     // LENボーナス
@@ -114,6 +134,13 @@ fn handle_local_field(
         6..=7 => lines + 3,
         8..=10 => lines + 4,
         11.. => lines + 5,
+    };
+
+    // Back to Backの場合は+1
+    let lines = if local_field.can_back_to_back && is_difficult_clear(clear_line_count, mino) {
+        lines + 1
+    } else {
+        lines
     };
 
     // パーフェクトクリアの場合は+10
@@ -127,23 +154,10 @@ fn handle_local_field(
         lines
     };
 
-    // フィールドの状態を更新
-    if clear_line_count != 0 {
-        local_field.can_back_to_back = is_difficult_clear;
-        local_field.len += 1;
-    } else {
-        local_field.len = 0;
-    }
+    lines
+}
 
-    // おじゃま行を送る
-    if_chain! {
-        if lines > 0;
-        if let Some(target_player_id) = local_field.target_player_id;
-        then {
-            local_send_line_events.send(LocalSendLinesEvent {
-                player_id: target_player_id,
-                lines,
-            })
-        }
-    }
+// テトリスやTスピンといった難しいライン消去か
+fn is_difficult_clear(clear_line_count: usize, mino: &Mino) -> bool {
+    clear_line_count == 4 || mino.t_spin != TSpin::None
 }

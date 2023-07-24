@@ -19,7 +19,7 @@ pub struct PlayerId(PeerId);
 pub struct LocalPlaceMinoEvent;
 
 #[derive(Event)]
-pub struct LocalSendLinesEvent {
+pub struct LocalSendGarbageEvent {
     pub player_id: PlayerId,
     pub lines: u8,
 }
@@ -134,7 +134,7 @@ pub fn handle_local_spawn_mino_event(
 
 pub fn handle_local_send_lines_event(
     mut socket: ResMut<MatchboxSocket<SingleChannel>>,
-    mut local_send_lines_events: EventReader<LocalSendLinesEvent>,
+    mut local_send_lines_events: EventReader<LocalSendGarbageEvent>,
 ) {
     for event in local_send_lines_events.iter() {
         let message = Message::LineSent { lines: event.lines };

@@ -20,7 +20,7 @@ use mino::event::{handle_place_mino, handle_spawn_mino, PlaceMinoEvent, SpawnMin
 use movement::{handle_move_event, MoveEvent};
 use net::{
     handle_local_send_lines_event, handle_local_spawn_mino_event, recieve_message_system,
-    setup_matchbox_socket, waiting_for_player_system, LocalPlaceMinoEvent, LocalSendLinesEvent,
+    setup_matchbox_socket, waiting_for_player_system, LocalPlaceMinoEvent, LocalSendGarbageEvent,
 };
 use timer::timer_system;
 
@@ -53,7 +53,7 @@ fn main() {
         .add_event::<PlaceMinoEvent>()
         .add_event::<MoveEvent>()
         .add_event::<LocalPlaceMinoEvent>()
-        .add_event::<LocalSendLinesEvent>()
+        .add_event::<LocalSendGarbageEvent>()
         .insert_resource(KeyboardRepeatTimer::default())
         .add_systems(Startup, (setup, setup_fps))
         .add_systems(Update, fps_system)
