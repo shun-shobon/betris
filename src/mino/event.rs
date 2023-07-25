@@ -1,6 +1,6 @@
 use super::{t_spin::TSpin, Mino};
 use crate::{
-    field::{local::LocalField, Field, FilledLines, GarbageLines},
+    field::{local::LocalField, Field, Garbages, Lines},
     net::{send_garbage, sync_local_field_change, PlayerId, Players, Socket},
 };
 use bevy::prelude::*;
@@ -12,8 +12,8 @@ pub struct SpawnMinoEvent;
 pub struct SyncFieldChangeEvent {
     pub player_id: PlayerId,
     pub mino: Mino,
-    pub clear_lines: FilledLines,
-    pub garbage_lines: GarbageLines,
+    pub clear_lines: Lines,
+    pub garbage_lines: Garbages,
 }
 
 #[derive(Event)]
@@ -43,7 +43,7 @@ pub fn handle_sync_field_change(
 
         field.blocks.place_mino(&event.mino);
         field.blocks.clear_lines(&event.clear_lines);
-        field.blocks.add_garbage(&event.garbage_lines);
+        field.blocks.add_garbages(&event.garbage_lines);
     }
 }
 
@@ -58,12 +58,12 @@ pub fn handle_place_mino(
 
         field.blocks.place_mino(mino);
 
-        let filled_lines = field.blocks.get_filled_lines();
-        field.blocks.clear_lines(&filled_lines);
+        let clear_lines = field.blocks.get_filled_lines();
+        field.blocks.clear_lines(&clear_lines);
 
         // フィールドの状態を更新
-        if !filled_lines.is_empty() {
-            local_field.can_back_to_back = is_difficult_clear(&filled_lines, &local_field);
+        if !clear_lines.is_empty() {
+            local_field.can_back_to_back = is_difficult_clear(&clear_lines, &local_field);
             local_field.ren += 1;
         } else {
             local_field.ren = 0;
@@ -71,22 +71,22 @@ pub fn handle_place_mino(
 
         // おじゃま行を送る
         if let Some(target_player_id) = local_field.target_player_id {
-            let garbage_amount = get_garbage_amount(&filled_lines, &local_field, &field);
+            let garbage_amount = get_garbage_amount(&clear_lines, &local_field, &field);
             if garbage_amount != 0 {
                 send_garbage(&mut socket, target_player_id, garbage_amount);
             }
         }
 
         // おじゃま行を受け取る
-        let garbage_lines = GarbageLines::from_amount(local_field.garbage_lines.iter().sum());
-        field.blocks.add_garbage(&garbage_lines);
+        let garbage_lines = Garbages::from_amount(local_field.garbage_lines.iter().sum());
+        field.blocks.add_garbages(&garbage_lines);
 
         // フィールドの状態の変更を通知
-        sync_local_field_change(&mut socket, &players, *mino, filled_lines, garbage_lines);
+        sync_local_field_change(&mut socket, &players, *mino, clear_lines, garbage_lines);
     }
 }
 
-fn get_garbage_amount(clear_lines: &FilledLines, local_field: &LocalField, field: &Field) -> i8 {
+fn get_garbage_amount(clear_lines: &Lines, local_field: &LocalField, field: &Field) -> i8 {
     if clear_lines.is_empty() {
         return 0;
     }
@@ -132,6 +132,6 @@ fn get_garbage_amount(clear_lines: &FilledLines, local_field: &LocalField, field
 }
 
 // テトリスやTスピンといった難しいライン消去か
-fn is_difficult_clear(clear_lines: &FilledLines, local_field: &LocalField) -> bool {
+fn is_difficult_clear(clear_lines: &Lines, local_field: &LocalField) -> bool {
     clear_lines.len() == 4 || local_field.t_spin != TSpin::None
 }

@@ -1,5 +1,5 @@
 use crate::{
-    field::{local::ReceiveGarbageEvent, Field, FilledLines, GarbageLines},
+    field::{local::ReceiveGarbageEvent, Field, Garbages, Lines},
     mino::{event::SyncFieldChangeEvent, Mino},
     AppState,
 };
@@ -22,8 +22,8 @@ pub struct Socket(MatchboxSocket<SingleChannel>);
 enum Message {
     FieldChanged {
         mino: Mino,
-        clear_lines: FilledLines,
-        garbage_lines: GarbageLines,
+        clear_lines: Lines,
+        garbage_lines: Garbages,
     },
     GarbageSent {
         amount: i8,
@@ -126,8 +126,8 @@ pub fn sync_local_field_change(
     Socket(socket): &mut Socket,
     players: &Players,
     mino: Mino,
-    clear_lines: FilledLines,
-    garbage_lines: GarbageLines,
+    clear_lines: Lines,
+    garbage_lines: Garbages,
 ) {
     let message = Message::FieldChanged {
         mino,

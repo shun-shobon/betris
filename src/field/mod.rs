@@ -97,7 +97,7 @@ impl Blocks {
         })
     }
 
-    pub fn get_filled_lines(&self) -> FilledLines {
+    pub fn get_filled_lines(&self) -> Lines {
         let full_filled_lines = self
             .0
             .iter()
@@ -107,10 +107,10 @@ impl Blocks {
             .rev()
             .collect::<Vec<_>>();
 
-        FilledLines(full_filled_lines)
+        Lines(full_filled_lines)
     }
 
-    pub fn clear_lines(&mut self, full_filled_lines: &FilledLines) {
+    pub fn clear_lines(&mut self, full_filled_lines: &Lines) {
         for &clear_y in &full_filled_lines.0 {
             for y in clear_y..(FIELD_MAX_HEIGHT - 1) {
                 self.0[y as usize] = self.0[(y + 1) as usize];
@@ -119,7 +119,7 @@ impl Blocks {
         }
     }
 
-    pub fn add_garbage(&mut self, _garbage_lines: &GarbageLines) {
+    pub fn add_garbages(&mut self, _garbage_lines: &Garbages) {
         // TODO: おじゃまラインの実装
     }
 
@@ -133,9 +133,9 @@ impl Blocks {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct FilledLines(Vec<i8>);
+pub struct Lines(Vec<i8>);
 
-impl FilledLines {
+impl Lines {
     pub fn len(&self) -> usize {
         self.0.len()
     }
@@ -146,9 +146,9 @@ impl FilledLines {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GarbageLines(Vec<i8>);
+pub struct Garbages(Vec<i8>);
 
-impl GarbageLines {
+impl Garbages {
     pub fn from_amount(amount: i8) -> Self {
         // 一度のおじゃま送信では70%の確率で同じ列に穴が出来る
         let vec = (0..amount)
