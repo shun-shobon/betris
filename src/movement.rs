@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::{
     field::{local::LocalField, Field},
-    mino::{shape::Shape, Angle, Mino, TSpin},
+    mino::{shape::Shape, t_spin::TSpin, Angle, Mino},
     pos,
     position::Position,
     timer::{DROP_INTERVAL, SOFT_DROP_INTERVAL},
@@ -53,7 +53,7 @@ pub fn handle_move(
 
                 if !collision {
                     mino.pos += direction.move_delta();
-                    mino.t_spin = TSpin::None;
+                    local_field.t_spin = TSpin::None;
                     local_field.lock_down_timer.reset();
                     local_field.lock_down_timer.pause();
                 }
@@ -84,15 +84,7 @@ pub fn handle_move(
                     local_field.lock_down_timer.reset();
                     local_field.lock_down_timer.pause();
 
-                    mino.t_spin = if is_t_spin(&mino, field) {
-                        if is_t_spin_mini(&mino, field, delta) {
-                            TSpin::Mini
-                        } else {
-                            TSpin::Full
-                        }
-                    } else {
-                        TSpin::None
-                    };
+                    local_field.t_spin.update(&mino, field, delta);
                 }
 
                 let is_landed = is_collision(
@@ -133,46 +125,6 @@ fn is_collision(
                 .get(pos)
                 .map_or(true, |block| block.is_filled())
         })
-}
-
-// Tミノであり，Tミノの四隅が3箇所以上埋まっているとT-Spin
-// 壁や床は埋まっている扱い
-fn is_t_spin(mino: &Mino, field: &Field) -> bool {
-    if mino.shape != Shape::T {
-        return false;
-    }
-
-    let fullfilled = T_SPIN_CHECK_POSITIONS
-        .iter()
-        .map(|&pos| pos + mino.pos)
-        .filter(|&pos| {
-            field
-                .blocks
-                .get(pos)
-                .map_or(true, |block| block.is_filled())
-        })
-        .count();
-
-    fullfilled >= 3
-}
-
-// T-Spinであり，回転補正が(±1, ±2)ではなく，Tミノの凸側の隅2箇所が埋まっていないとT-Spin Mini
-fn is_t_spin_mini(mino: &Mino, field: &Field, delta: Position) -> bool {
-    if delta.x.abs() == 1 && delta.y.abs() == 2 {
-        false
-    } else {
-        let angle_idx: usize = mino.angle.into();
-
-        !T_SPIN_MINI_CHECK_POSITIONS[angle_idx]
-            .iter()
-            .map(|&pos| pos + mino.pos)
-            .all(|pos| {
-                field
-                    .blocks
-                    .get(pos)
-                    .map_or(true, |block| block.is_filled())
-            })
-    }
 }
 
 fn get_new_angle(angle: Angle, direction: Direction) -> Angle {
@@ -242,11 +194,3 @@ static SRS_DELTAS_180_TO_270_I: SRSDeltas = pos![(0, 0), (2, 0), (-1, 0), (2, 1)
 static SRS_DELTAS_270_TO_180_I: SRSDeltas = pos![(0, 0), (-2, 0), (1, 0), (-2, -1), (1, 2)];
 static SRS_DELTAS_270_TO_0_I: SRSDeltas = pos![(0, 0), (1, 0), (-2, 0), (1, -2), (-2, 1)];
 static SRS_DELTAS_0_TO_270_I: SRSDeltas = pos![(0, 0), (-1, 0), (2, 0), (-1, 2), (2, -1)];
-
-static T_SPIN_CHECK_POSITIONS: [Position; 4] = pos![(0, 0), (2, 0), (0, 2), (2, 2)];
-static T_SPIN_MINI_CHECK_POSITIONS: [[Position; 2]; 4] = [
-    pos![(0, 2), (2, 2)],
-    pos![(2, 2), (2, 0)],
-    pos![(2, 0), (0, 0)],
-    pos![(0, 0), (0, 2)],
-];

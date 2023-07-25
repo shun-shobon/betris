@@ -1,5 +1,6 @@
 pub mod event;
 pub mod shape;
+pub mod t_spin;
 
 use self::shape::Shape;
 use crate::{
@@ -15,15 +16,6 @@ pub struct Mino {
     pub pos: Position,
     pub angle: Angle,
     pub shape: Shape,
-    pub t_spin: TSpin,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
-pub enum TSpin {
-    #[default]
-    None,
-    Mini,
-    Full,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
@@ -44,7 +36,6 @@ impl Mino {
             ),
             angle: Angle::default(),
             shape,
-            t_spin: TSpin::default(),
         }
     }
 

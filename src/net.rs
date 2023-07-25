@@ -13,7 +13,7 @@ use bevy::prelude::*;
 use bevy_matchbox::prelude::*;
 use serde::{Deserialize, Serialize};
 
-pub const NUM_PLAYERS: usize = 2;
+pub const NUM_PLAYERS: usize = 1;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PlayerId(PeerId);

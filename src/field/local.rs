@@ -1,5 +1,6 @@
 use super::{block::BLOCK_SIZE, FIELD_HEIGHT, FIELD_WIDTH};
 use crate::{
+    mino::t_spin::TSpin,
     net::PlayerId,
     random::RandomBag,
     timer::{create_drop_timer, create_lock_down_timer, create_target_change_timer},
@@ -25,6 +26,7 @@ pub struct GarbageLine;
 pub struct LocalField {
     pub can_back_to_back: bool,
     pub len: u8,
+    pub t_spin: TSpin,
     pub garbage_lines: VecDeque<u8>,
     pub target_player_id: Option<PlayerId>,
     pub random_bag: RandomBag,
@@ -38,6 +40,7 @@ impl Default for LocalField {
         Self {
             can_back_to_back: false,
             len: 0,
+            t_spin: TSpin::default(),
             garbage_lines: VecDeque::new(),
             target_player_id: None,
             random_bag: RandomBag::new(),
