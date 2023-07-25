@@ -1,13 +1,13 @@
 use crate::{
-    field::{local::ReceiveGarbageEvent, Field},
-    mino::Mino,
+    field::{local::ReceiveGarbageEvent, Field, FilledLines, GarbageLines},
+    mino::{event::SyncFieldChangeEvent, Mino},
     AppState,
 };
 use bevy::prelude::*;
 use bevy_matchbox::prelude::*;
 use serde::{Deserialize, Serialize};
 
-pub const NUM_PLAYERS: usize = 1;
+pub const NUM_PLAYERS: usize = 2;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PlayerId(PeerId);
@@ -18,10 +18,16 @@ pub struct Players(pub Vec<PlayerId>);
 #[derive(Resource)]
 pub struct Socket(MatchboxSocket<SingleChannel>);
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 enum Message {
-    MinoPlaced { mino: Mino },
-    GarbageSent { lines: u8 },
+    FieldChanged {
+        mino: Mino,
+        clear_lines: FilledLines,
+        garbage_lines: GarbageLines,
+    },
+    GarbageSent {
+        amount: i8,
+    },
 }
 
 pub fn setup_matchbox_socket(mut commands: Commands) {
@@ -79,16 +85,29 @@ pub fn waiting_for_player_system(
 pub fn receive_message_system(
     mut socket: ResMut<Socket>,
     mut receive_garbage_events: EventWriter<ReceiveGarbageEvent>,
+    mut sync_field_change_events: EventWriter<SyncFieldChangeEvent>,
 ) {
     let Socket(socket) = &mut *socket;
 
-    for (_, message) in socket.receive() {
+    for (peer_id, message) in socket.receive() {
         match bincode::deserialize(&message).unwrap() {
-            Message::MinoPlaced { mino } => {
-                info!("MinoPlaced: {:?}", mino);
-                // TODO: 他プレイヤーのフィールドの状態を更新
+            Message::FieldChanged {
+                mino,
+                clear_lines,
+                garbage_lines,
+            } => {
+                info!(
+                    "MinoPlaced: {:?} {:?} {:?}",
+                    mino, clear_lines, garbage_lines
+                );
+                sync_field_change_events.send(SyncFieldChangeEvent {
+                    player_id: PlayerId(peer_id),
+                    mino,
+                    clear_lines,
+                    garbage_lines,
+                });
             }
-            Message::GarbageSent { lines } => {
+            Message::GarbageSent { amount: lines } => {
                 info!("LineSent: {}", lines);
                 receive_garbage_events.send(ReceiveGarbageEvent(lines));
             }
@@ -96,9 +115,28 @@ pub fn receive_message_system(
     }
 }
 
-pub fn send_garbage(Socket(socket): &mut Socket, player_id: PlayerId, lines: u8) {
-    let message = Message::GarbageSent { lines };
+pub fn send_garbage(Socket(socket): &mut Socket, player_id: PlayerId, amount: i8) {
+    let message = Message::GarbageSent { amount };
     let message = bincode::serialize(&message).unwrap().into_boxed_slice();
 
     socket.send(message, player_id.0);
+}
+
+pub fn sync_local_field_change(
+    Socket(socket): &mut Socket,
+    players: &Players,
+    mino: Mino,
+    clear_lines: FilledLines,
+    garbage_lines: GarbageLines,
+) {
+    let message = Message::FieldChanged {
+        mino,
+        clear_lines,
+        garbage_lines,
+    };
+    let message = bincode::serialize(&message).unwrap().into_boxed_slice();
+
+    for PlayerId(peer_id) in players.0.iter() {
+        socket.send(message.clone(), *peer_id);
+    }
 }

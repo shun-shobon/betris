@@ -1,5 +1,6 @@
 pub mod block;
 pub mod local;
+pub mod random;
 pub mod timer;
 
 use self::{
@@ -8,6 +9,8 @@ use self::{
 };
 use crate::{mino::Mino, net::PlayerId, pos, position::Position};
 use bevy::prelude::*;
+use rand::prelude::*;
+use serde::{Deserialize, Serialize};
 
 pub const FIELD_WIDTH: i8 = 10;
 pub const FIELD_HEIGHT: i8 = 20;
@@ -116,6 +119,10 @@ impl Blocks {
         }
     }
 
+    pub fn add_garbage(&mut self, _garbage_lines: &GarbageLines) {
+        // TODO: おじゃまラインの実装
+    }
+
     pub fn is_empty(&self) -> bool {
         self.0.iter().all(|line| line.iter().all(Block::is_empty))
     }
@@ -125,7 +132,7 @@ impl Blocks {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FilledLines(Vec<i8>);
 
 impl FilledLines {
@@ -136,6 +143,45 @@ impl FilledLines {
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GarbageLines(Vec<i8>);
+
+impl GarbageLines {
+    pub fn from_amount(amount: i8) -> Self {
+        // 一度のおじゃま送信では70%の確率で同じ列に穴が出来る
+        let vec = (0..amount)
+            .scan(None, |prev, _| match *prev {
+                None => {
+                    *prev = Some(get_random_x());
+                    *prev
+                }
+                Some(x) => {
+                    if rand::thread_rng().gen_bool(0.7) {
+                        Some(x)
+                    } else {
+                        *prev = Some(get_random_x());
+                        *prev
+                    }
+                }
+            })
+            .collect();
+
+        Self(vec)
+    }
+
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+}
+
+fn get_random_x() -> i8 {
+    rand::thread_rng().gen_range(0..FIELD_WIDTH)
 }
 
 fn spawn_grid(parent: &mut ChildBuilder) {

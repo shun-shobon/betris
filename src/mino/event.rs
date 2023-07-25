@@ -1,13 +1,20 @@
 use super::{t_spin::TSpin, Mino};
 use crate::{
-    field::{local::LocalField, Field, FilledLines},
-    net::{send_garbage, Socket},
+    field::{local::LocalField, Field, FilledLines, GarbageLines},
+    net::{send_garbage, sync_local_field_change, PlayerId, Players, Socket},
 };
 use bevy::prelude::*;
-use if_chain::if_chain;
 
 #[derive(Event)]
 pub struct SpawnMinoEvent;
+
+#[derive(Event)]
+pub struct SyncFieldChangeEvent {
+    pub player_id: PlayerId,
+    pub mino: Mino,
+    pub clear_lines: FilledLines,
+    pub garbage_lines: GarbageLines,
+}
 
 #[derive(Event)]
 pub struct PlaceMinoEvent(pub Mino);
@@ -27,10 +34,24 @@ pub fn handle_spawn_mino(
     }
 }
 
+pub fn handle_sync_field_change(
+    mut events: EventReader<SyncFieldChangeEvent>,
+    mut field_query: Query<&mut Field>,
+) {
+    for event in events.iter() {
+        let Some(mut field) = field_query.iter_mut().find(|field| field.player_id == event.player_id) else { continue; };
+
+        field.blocks.place_mino(&event.mino);
+        field.blocks.clear_lines(&event.clear_lines);
+        field.blocks.add_garbage(&event.garbage_lines);
+    }
+}
+
 pub fn handle_place_mino(
     mut events: EventReader<PlaceMinoEvent>,
-    mut field_query: Query<(&mut Field, &mut LocalField)>,
     mut socket: ResMut<Socket>,
+    players: Res<Players>,
+    mut field_query: Query<(&mut Field, &mut LocalField)>,
 ) {
     for PlaceMinoEvent(mino) in events.iter() {
         let Ok((mut field, mut local_field)) = field_query.get_single_mut() else { continue; };
@@ -39,8 +60,6 @@ pub fn handle_place_mino(
 
         let filled_lines = field.blocks.get_filled_lines();
         field.blocks.clear_lines(&filled_lines);
-
-        let garbage_lines = get_garbage_lines(&filled_lines, &local_field, &field);
 
         // フィールドの状態を更新
         if !filled_lines.is_empty() {
@@ -51,21 +70,23 @@ pub fn handle_place_mino(
         }
 
         // おじゃま行を送る
-        if_chain! {
-            if garbage_lines != 0;
-            if let Some(target_player_id) = local_field.target_player_id;
-            then {
-                send_garbage(&mut socket, target_player_id, garbage_lines);
+        if let Some(target_player_id) = local_field.target_player_id {
+            let garbage_amount = get_garbage_amount(&filled_lines, &local_field, &field);
+            if garbage_amount != 0 {
+                send_garbage(&mut socket, target_player_id, garbage_amount);
             }
         }
 
         // おじゃま行を受け取る
+        let garbage_lines = GarbageLines::from_amount(local_field.garbage_lines.iter().sum());
+        field.blocks.add_garbage(&garbage_lines);
 
         // フィールドの状態の変更を通知
+        sync_local_field_change(&mut socket, &players, *mino, filled_lines, garbage_lines);
     }
 }
 
-fn get_garbage_lines(clear_lines: &FilledLines, local_field: &LocalField, field: &Field) -> u8 {
+fn get_garbage_amount(clear_lines: &FilledLines, local_field: &LocalField, field: &Field) -> i8 {
     if clear_lines.is_empty() {
         return 0;
     }

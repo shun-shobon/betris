@@ -13,7 +13,6 @@ pub mod mino;
 pub mod movement;
 pub mod net;
 pub mod position;
-pub mod random;
 
 use bevy::{
     diagnostic::FrameTimeDiagnosticsPlugin, log::LogPlugin, prelude::*, render::camera::ScalingMode,
@@ -25,7 +24,10 @@ use field::{
 };
 use fps::{fps_system, setup_fps};
 use input::{keyboard_input_system, KeyboardRepeatTimer};
-use mino::event::{handle_place_mino, handle_spawn_mino, PlaceMinoEvent, SpawnMinoEvent};
+use mino::event::{
+    handle_place_mino, handle_spawn_mino, handle_sync_field_change, PlaceMinoEvent, SpawnMinoEvent,
+    SyncFieldChangeEvent,
+};
 use movement::{handle_move, MoveEvent};
 use net::{receive_message_system, setup_matchbox_socket, waiting_for_player_system};
 
@@ -58,6 +60,7 @@ fn main() {
         .add_event::<PlaceMinoEvent>()
         .add_event::<MoveEvent>()
         .add_event::<ReceiveGarbageEvent>()
+        .add_event::<SyncFieldChangeEvent>()
         .insert_resource(KeyboardRepeatTimer::default())
         .add_systems(Startup, (setup, setup_fps))
         .add_systems(Update, fps_system)
@@ -80,6 +83,7 @@ fn main() {
                 handle_spawn_mino,
                 handle_place_mino,
                 handle_receive_garbage,
+                handle_sync_field_change,
             )
                 .run_if(in_state(AppState::Playing)),
         )

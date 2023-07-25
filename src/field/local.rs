@@ -1,9 +1,10 @@
 use super::{
     block::BLOCK_SIZE,
+    random::RandomBag,
     timer::{DropTimer, LockDownTimer, TargetChangeTimer},
     FIELD_HEIGHT, FIELD_WIDTH,
 };
-use crate::{mino::t_spin::TSpin, net::PlayerId, random::RandomBag};
+use crate::{mino::t_spin::TSpin, net::PlayerId};
 use bevy::prelude::*;
 use std::collections::VecDeque;
 
@@ -15,7 +16,7 @@ static GARBAGE_LINE_START_X: f32 =
 static GARBAGE_LINE_START_Y: f32 = -(BLOCK_SIZE * FIELD_HEIGHT as f32) / 2.0;
 
 #[derive(Debug, Event)]
-pub struct ReceiveGarbageEvent(pub u8);
+pub struct ReceiveGarbageEvent(pub i8);
 
 #[derive(Component)]
 pub struct GarbageLine;
@@ -25,7 +26,7 @@ pub struct LocalField {
     pub can_back_to_back: bool,
     pub len: u8,
     pub t_spin: TSpin,
-    pub garbage_lines: VecDeque<u8>,
+    pub garbage_lines: VecDeque<i8>,
     pub target_player_id: Option<PlayerId>,
     pub random_bag: RandomBag,
 }
