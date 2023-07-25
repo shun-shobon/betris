@@ -62,11 +62,7 @@ impl From<Shape> for Block {
     }
 }
 
-#[allow(
-    clippy::needless_pass_by_value,
-    clippy::cast_possible_truncation,
-    clippy::cast_possible_wrap
-)]
+#[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
 pub fn field_block_system(
     mut commands: Commands,
     field_block_query: Query<Entity, With<Block>>,

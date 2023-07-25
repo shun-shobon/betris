@@ -1,9 +1,10 @@
 pub mod block;
 pub mod local;
+pub mod timer;
 
 use self::{
     block::{Block, BLOCK_SIZE},
-    local::LocalField,
+    local::LocalFieldBundle,
 };
 use crate::{mino::Mino, net::PlayerId, pos, position::Position};
 use bevy::prelude::*;
@@ -37,7 +38,7 @@ impl Field {
 
         if is_local_field {
             field_commands
-                .insert(LocalField::default())
+                .insert(LocalFieldBundle::default())
                 .with_children(spawn_grid)
                 .id()
         } else {

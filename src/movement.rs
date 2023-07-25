@@ -1,11 +1,14 @@
 use bevy::prelude::*;
 
 use crate::{
-    field::{local::LocalField, Field},
+    field::{
+        local::LocalField,
+        timer::{DropTimer, LockDownTimer, DROP_INTERVAL, SOFT_DROP_INTERVAL},
+        Field,
+    },
     mino::{shape::Shape, t_spin::TSpin, Angle, Mino},
     pos,
     position::Position,
-    timer::{DROP_INTERVAL, SOFT_DROP_INTERVAL},
 };
 
 #[derive(Debug, Event)]
@@ -36,13 +39,16 @@ impl Direction {
 pub fn handle_move(
     mut move_events: EventReader<MoveEvent>,
     mut mino_query: Query<&mut Mino>,
-    mut field_query: Query<(&Field, &mut LocalField), With<Field>>,
+    mut field_query: Query<
+        (&Field, &mut LocalField, &mut DropTimer, &mut LockDownTimer),
+        With<Field>,
+    >,
 ) {
     for event in move_events.iter() {
         match event {
             MoveEvent::Move(direction) => {
                 let Ok(mut mino) = mino_query.get_single_mut() else { continue; };
-                let Ok((field, mut local_field)) = field_query.get_single_mut() else { continue; };
+                let Ok((field, mut local_field, mut drop_timer, mut lock_down_timer)) = field_query.get_single_mut() else { continue; };
 
                 let collision = is_collision(
                     mino.shape.blocks(mino.angle),
@@ -54,8 +60,8 @@ pub fn handle_move(
                 if !collision {
                     mino.pos += direction.move_delta();
                     local_field.t_spin = TSpin::None;
-                    local_field.lock_down_timer.reset();
-                    local_field.lock_down_timer.pause();
+                    lock_down_timer.0.reset();
+                    lock_down_timer.0.pause();
                 }
 
                 let is_landed = is_collision(
@@ -65,13 +71,13 @@ pub fn handle_move(
                     field,
                 );
                 if is_landed {
-                    local_field.drop_timer.reset();
-                    local_field.lock_down_timer.unpause();
+                    drop_timer.0.reset();
+                    lock_down_timer.0.unpause();
                 }
             }
             MoveEvent::Rotate(direction) => {
                 let Ok(mut mino) = mino_query.get_single_mut() else { continue; };
-                let Ok((field, mut local_field)) = field_query.get_single_mut() else { continue; };
+                let Ok((field, mut local_field, mut drop_timer, mut lock_down_timer)) = field_query.get_single_mut() else { continue; };
 
                 let new_angle = get_new_angle(mino.angle, *direction);
                 let deltas = get_srs_deltas(mino.angle, new_angle, mino.shape);
@@ -81,8 +87,8 @@ pub fn handle_move(
                 }) {
                     mino.pos += delta;
                     mino.angle = new_angle;
-                    local_field.lock_down_timer.reset();
-                    local_field.lock_down_timer.pause();
+                    lock_down_timer.0.reset();
+                    lock_down_timer.0.pause();
 
                     local_field.t_spin.update(&mino, field, delta);
                 }
@@ -94,17 +100,17 @@ pub fn handle_move(
                     field,
                 );
                 if is_landed {
-                    local_field.drop_timer.reset();
-                    local_field.lock_down_timer.unpause();
+                    drop_timer.0.reset();
+                    lock_down_timer.0.unpause();
                 }
             }
             MoveEvent::StartSoftDrop => {
-                let Ok((_, mut local_field)) = field_query.get_single_mut() else { continue; };
-                local_field.drop_timer.set_duration(SOFT_DROP_INTERVAL);
+                let Ok((_, _, mut drop_timer, _)) = field_query.get_single_mut() else { continue; };
+                drop_timer.0.set_duration(SOFT_DROP_INTERVAL);
             }
             MoveEvent::StopSoftDrop => {
-                let Ok((_, mut local_field)) = field_query.get_single_mut() else { continue; };
-                local_field.drop_timer.set_duration(DROP_INTERVAL);
+                let Ok((_, _, mut drop_timer, _)) = field_query.get_single_mut() else { continue; };
+                drop_timer.0.set_duration(DROP_INTERVAL);
             }
         }
     }

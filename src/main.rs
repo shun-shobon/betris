@@ -2,7 +2,9 @@
 #[allow(
     clippy::must_use_candidate,
     clippy::cast_lossless,
-    clippy::missing_panics_doc
+    clippy::missing_panics_doc,
+    clippy::needless_pass_by_value,
+    clippy::module_name_repetitions
 )]
 pub mod field;
 pub mod fps;
@@ -12,7 +14,6 @@ pub mod movement;
 pub mod net;
 pub mod position;
 pub mod random;
-pub mod timer;
 
 use bevy::{
     diagnostic::FrameTimeDiagnosticsPlugin, log::LogPlugin, prelude::*, render::camera::ScalingMode,
@@ -20,13 +21,13 @@ use bevy::{
 use field::{
     block::field_block_system,
     local::{garbage_line_system, handle_receive_garbage, ReceiveGarbageEvent},
+    timer::{drop_timer_system, lock_down_timer_system, target_change_timer_system},
 };
 use fps::{fps_system, setup_fps};
 use input::{keyboard_input_system, KeyboardRepeatTimer};
 use mino::event::{handle_place_mino, handle_spawn_mino, PlaceMinoEvent, SpawnMinoEvent};
 use movement::{handle_move, MoveEvent};
 use net::{receive_message_system, setup_matchbox_socket, waiting_for_player_system};
-use timer::timer_system;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, States)]
 pub enum AppState {
@@ -70,7 +71,9 @@ fn main() {
         .add_systems(
             Update,
             (
-                timer_system,
+                drop_timer_system,
+                lock_down_timer_system,
+                target_change_timer_system,
                 keyboard_input_system,
                 receive_message_system,
                 handle_move,

@@ -1,10 +1,9 @@
-use super::{block::BLOCK_SIZE, FIELD_HEIGHT, FIELD_WIDTH};
-use crate::{
-    mino::t_spin::TSpin,
-    net::PlayerId,
-    random::RandomBag,
-    timer::{create_drop_timer, create_lock_down_timer, create_target_change_timer},
+use super::{
+    block::BLOCK_SIZE,
+    timer::{DropTimer, LockDownTimer, TargetChangeTimer},
+    FIELD_HEIGHT, FIELD_WIDTH,
 };
+use crate::{mino::t_spin::TSpin, net::PlayerId, random::RandomBag};
 use bevy::prelude::*;
 use std::collections::VecDeque;
 
@@ -21,7 +20,6 @@ pub struct ReceiveGarbageEvent(pub u8);
 #[derive(Component)]
 pub struct GarbageLine;
 
-#[allow(clippy::module_name_repetitions)]
 #[derive(Component)]
 pub struct LocalField {
     pub can_back_to_back: bool,
@@ -30,9 +28,14 @@ pub struct LocalField {
     pub garbage_lines: VecDeque<u8>,
     pub target_player_id: Option<PlayerId>,
     pub random_bag: RandomBag,
-    pub drop_timer: Timer,
-    pub lock_down_timer: Timer,
-    pub target_change_timer: Timer,
+}
+
+#[derive(Bundle, Default)]
+pub struct LocalFieldBundle {
+    pub local_field: LocalField,
+    pub drop_timer: DropTimer,
+    pub lock_down_timer: LockDownTimer,
+    pub target_change_timer: TargetChangeTimer,
 }
 
 impl Default for LocalField {
@@ -44,9 +47,6 @@ impl Default for LocalField {
             garbage_lines: VecDeque::new(),
             target_player_id: None,
             random_bag: RandomBag::new(),
-            drop_timer: create_drop_timer(),
-            lock_down_timer: create_lock_down_timer(),
-            target_change_timer: create_target_change_timer(),
         }
     }
 }
@@ -61,7 +61,6 @@ pub fn handle_receive_garbage(
     }
 }
 
-#[allow(clippy::needless_pass_by_value)]
 pub fn garbage_line_system(
     mut commands: Commands,
     garbage_line_query: Query<Entity, With<GarbageLine>>,
