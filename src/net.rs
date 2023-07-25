@@ -112,7 +112,7 @@ pub fn receive_message_system(
     }
 }
 
-pub fn handle_local_spawn_mino_event(
+pub fn handle_local_place_mino(
     mut commands: Commands,
     mut socket: ResMut<MatchboxSocket<SingleChannel>>,
     field_query: Query<&Field, With<LocalField>>,
@@ -142,7 +142,7 @@ pub fn handle_local_spawn_mino_event(
     }
 }
 
-pub fn handle_local_send_garbage_event(
+pub fn handle_local_send_garbage(
     mut socket: ResMut<MatchboxSocket<SingleChannel>>,
     mut local_send_lines_events: EventReader<LocalSendGarbageEvent>,
 ) {

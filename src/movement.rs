@@ -32,7 +32,7 @@ impl Direction {
     }
 }
 
-pub fn handle_move_event(
+pub fn handle_move(
     mut move_events: EventReader<MoveEvent>,
     mut mino_query: Query<&mut Mino>,
     mut field_query: Query<(&Field, &mut LocalField), With<Field>>,

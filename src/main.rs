@@ -20,9 +20,9 @@ use field::{
 use fps::{fps_system, setup_fps};
 use input::{keyboard_input_system, KeyboardRepeatTimer};
 use mino::event::{handle_place_mino, handle_spawn_mino, PlaceMinoEvent, SpawnMinoEvent};
-use movement::{handle_move_event, MoveEvent};
+use movement::{handle_move, MoveEvent};
 use net::{
-    handle_local_send_garbage_event, handle_local_spawn_mino_event, receive_message_system,
+    handle_local_place_mino, handle_local_send_garbage, receive_message_system,
     setup_matchbox_socket, waiting_for_player_system, LocalPlaceMinoEvent, LocalSendGarbageEvent,
 };
 use timer::timer_system;
@@ -74,12 +74,12 @@ fn main() {
                 timer_system,
                 keyboard_input_system,
                 receive_message_system,
-                handle_move_event,
+                handle_move,
                 handle_spawn_mino,
                 handle_place_mino,
                 handle_receive_garbage,
-                handle_local_spawn_mino_event,
-                handle_local_send_garbage_event,
+                handle_local_place_mino,
+                handle_local_send_garbage,
             )
                 .run_if(in_state(AppState::Playing)),
         )
