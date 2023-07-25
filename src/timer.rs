@@ -1,7 +1,11 @@
 use crate::{
     field::{local::LocalField, Field},
+    mino::{
+        event::{PlaceMinoEvent, SpawnMinoEvent},
+        Mino,
+    },
     movement::{Direction, MoveEvent},
-    net::{LocalPlaceMinoEvent, Players},
+    net::Players,
 };
 use bevy::prelude::*;
 use std::time::Duration;
@@ -27,11 +31,14 @@ pub fn create_target_change_timer() -> Timer {
 }
 
 pub fn timer_system(
+    mut commands: Commands,
     time: Res<Time>,
     players: Res<Players>,
     mut field_query: Query<&mut LocalField, With<Field>>,
+    mino_query: Query<(Entity, &Mino)>,
     mut move_event_writer: EventWriter<MoveEvent>,
-    mut local_place_mino_event_writer: EventWriter<LocalPlaceMinoEvent>,
+    mut place_mino_event_writer: EventWriter<PlaceMinoEvent>,
+    mut spwan_mino_event_writer: EventWriter<SpawnMinoEvent>,
 ) {
     let Ok(mut local_field ) = field_query.get_single_mut() else { return; };
 
@@ -44,7 +51,10 @@ pub fn timer_system(
         .tick(time.delta())
         .just_finished()
     {
-        local_place_mino_event_writer.send(LocalPlaceMinoEvent);
+        let Ok((mino_entity, mino)) = mino_query.get_single() else { return; };
+        commands.entity(mino_entity).despawn_recursive();
+        place_mino_event_writer.send(PlaceMinoEvent(*mino));
+        spwan_mino_event_writer.send(SpawnMinoEvent);
     }
 
     if local_field

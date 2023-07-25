@@ -1,7 +1,7 @@
 use super::{t_spin::TSpin, Mino};
 use crate::{
-    field::{local::LocalField, Field},
-    net::{LocalSendGarbageEvent, PlayerId},
+    field::{local::LocalField, Field, FilledLines},
+    net::{send_garbage, Socket},
 };
 use bevy::prelude::*;
 use if_chain::if_chain;
@@ -9,18 +9,15 @@ use if_chain::if_chain;
 #[derive(Event)]
 pub struct SpawnMinoEvent;
 
-#[derive(Debug, Clone, Copy, Event)]
-pub struct PlaceMinoEvent {
-    pub player_id: PlayerId,
-    pub mino: Mino,
-}
+#[derive(Event)]
+pub struct PlaceMinoEvent(pub Mino);
 
 pub fn handle_spawn_mino(
     mut commands: Commands,
-    mut spawn_mino_events: EventReader<SpawnMinoEvent>,
+    mut events: EventReader<SpawnMinoEvent>,
     mut field_query: Query<(Entity, &mut LocalField)>,
 ) {
-    for _ in spawn_mino_events.iter() {
+    for _ in events.iter() {
         let Ok((field_entity, mut local_field)) = field_query.get_single_mut() else { continue; };
 
         let mino_shape = local_field.random_bag.next().unwrap();
@@ -31,65 +28,50 @@ pub fn handle_spawn_mino(
 }
 
 pub fn handle_place_mino(
-    mut place_mino_events: EventReader<PlaceMinoEvent>,
-    mut field_query: Query<(&mut Field, Option<&mut LocalField>)>,
-    mut local_send_line_events: EventWriter<LocalSendGarbageEvent>,
+    mut events: EventReader<PlaceMinoEvent>,
+    mut field_query: Query<(&mut Field, &mut LocalField)>,
+    mut socket: ResMut<Socket>,
 ) {
-    for PlaceMinoEvent { player_id, mino } in place_mino_events.iter() {
-        let Some((mut field, local_field)) = field_query.iter_mut().find(|(field, _)| field.player_id == *player_id) else { continue; };
+    for PlaceMinoEvent(mino) in events.iter() {
+        let Ok((mut field, mut local_field)) = field_query.get_single_mut() else { continue; };
 
         field.blocks.place_mino(mino);
 
         let filled_lines = field.blocks.get_filled_lines();
         field.blocks.clear_lines(&filled_lines);
 
-        if let Some(mut local_field) = local_field {
-            handle_local_field(
-                &field,
-                &mut local_field,
-                filled_lines.len(),
-                &mut local_send_line_events,
-            );
+        let garbage_lines = get_garbage_lines(&filled_lines, &local_field, &field);
+
+        // フィールドの状態を更新
+        if !filled_lines.is_empty() {
+            local_field.can_back_to_back = is_difficult_clear(&filled_lines, &local_field);
+            local_field.len += 1;
+        } else {
+            local_field.len = 0;
         }
+
+        // おじゃま行を送る
+        if_chain! {
+            if garbage_lines != 0;
+            if let Some(target_player_id) = local_field.target_player_id;
+            then {
+                send_garbage(&mut socket, target_player_id, garbage_lines);
+            }
+        }
+
+        // おじゃま行を受け取る
+
+        // フィールドの状態の変更を通知
     }
 }
 
-fn handle_local_field(
-    field: &Field,
-    local_field: &mut LocalField,
-    clear_line_count: usize,
-    local_send_line_events: &mut EventWriter<LocalSendGarbageEvent>,
-) {
-    let garbage_lines = get_garbage_lines(clear_line_count, local_field, field);
-
-    // フィールドの状態を更新
-    if clear_line_count != 0 {
-        local_field.can_back_to_back = is_difficult_clear(clear_line_count, local_field);
-        local_field.len += 1;
-    } else {
-        local_field.len = 0;
-    }
-
-    // おじゃま行を送る
-    if_chain! {
-        if garbage_lines != 0;
-        if let Some(target_player_id) = local_field.target_player_id;
-        then {
-            local_send_line_events.send(LocalSendGarbageEvent {
-                player_id: target_player_id,
-                lines: garbage_lines,
-            })
-        }
-    }
-}
-
-fn get_garbage_lines(clear_line_count: usize, local_field: &LocalField, field: &Field) -> u8 {
-    if clear_line_count == 0 {
+fn get_garbage_lines(clear_lines: &FilledLines, local_field: &LocalField, field: &Field) -> u8 {
+    if clear_lines.is_empty() {
         return 0;
     }
 
     // 基本のおじゃま行数
-    let basic = match (clear_line_count, local_field.t_spin) {
+    let basic = match (clear_lines.len(), local_field.t_spin) {
         (1, TSpin::None) => 0,                    // Single
         (2, TSpin::None) => 1,                    // Double
         (3, TSpin::None) => 2,                    // Triple
@@ -113,7 +95,7 @@ fn get_garbage_lines(clear_line_count: usize, local_field: &LocalField, field: &
 
     // Back to Backの場合は+1
     let back_to_back_bonus =
-        if local_field.can_back_to_back && is_difficult_clear(clear_line_count, local_field) {
+        if local_field.can_back_to_back && is_difficult_clear(clear_lines, local_field) {
             1
         } else {
             0
@@ -126,6 +108,6 @@ fn get_garbage_lines(clear_line_count: usize, local_field: &LocalField, field: &
 }
 
 // テトリスやTスピンといった難しいライン消去か
-fn is_difficult_clear(clear_line_count: usize, local_field: &LocalField) -> bool {
-    clear_line_count == 4 || local_field.t_spin != TSpin::None
+fn is_difficult_clear(clear_lines: &FilledLines, local_field: &LocalField) -> bool {
+    clear_lines.len() == 4 || local_field.t_spin != TSpin::None
 }

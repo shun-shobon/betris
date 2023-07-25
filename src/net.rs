@@ -1,12 +1,6 @@
 use crate::{
-    field::{
-        local::{LocalField, ReceiveGarbageEvent},
-        Field,
-    },
-    mino::{
-        event::{PlaceMinoEvent, SpawnMinoEvent},
-        Mino,
-    },
+    field::{local::ReceiveGarbageEvent, Field},
+    mino::Mino,
     AppState,
 };
 use bevy::prelude::*;
@@ -21,25 +15,13 @@ pub struct PlayerId(PeerId);
 #[derive(Resource)]
 pub struct Players(pub Vec<PlayerId>);
 
-#[derive(Event)]
-pub struct LocalPlaceMinoEvent;
-
-#[derive(Event)]
-pub struct LocalSendGarbageEvent {
-    pub player_id: PlayerId,
-    pub lines: u8,
-}
+#[derive(Resource)]
+pub struct Socket(MatchboxSocket<SingleChannel>);
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 enum Message {
     MinoPlaced { mino: Mino },
     GarbageSent { lines: u8 },
-}
-
-impl From<PlaceMinoEvent> for Message {
-    fn from(event: PlaceMinoEvent) -> Self {
-        Self::MinoPlaced { mino: event.mino }
-    }
 }
 
 pub fn setup_matchbox_socket(mut commands: Commands) {
@@ -49,14 +31,18 @@ pub fn setup_matchbox_socket(mut commands: Commands) {
     info!("Connecting to matchbox server: {}", room_url);
 
     let builer = WebRtcSocketBuilder::new(room_url).add_channel(ChannelConfig::reliable());
-    commands.insert_resource(MatchboxSocket::from(builer));
+    let socket = MatchboxSocket::from(builer);
+    let socket = Socket(socket);
+    commands.insert_resource(socket);
 }
 
 pub fn waiting_for_player_system(
     mut commands: Commands,
-    mut socket: ResMut<MatchboxSocket<SingleChannel>>,
+    mut socket: ResMut<Socket>,
     mut app_state: ResMut<NextState<AppState>>,
 ) {
+    let Socket(socket) = &mut *socket;
+
     if socket.id().is_none() || socket.get_channel(0).is_err() {
         return;
     }
@@ -91,18 +77,16 @@ pub fn waiting_for_player_system(
 }
 
 pub fn receive_message_system(
-    mut socket: ResMut<MatchboxSocket<SingleChannel>>,
+    mut socket: ResMut<Socket>,
     mut receive_garbage_events: EventWriter<ReceiveGarbageEvent>,
-    mut place_mino_event_writer: EventWriter<PlaceMinoEvent>,
 ) {
-    for (peer_id, message) in socket.receive() {
+    let Socket(socket) = &mut *socket;
+
+    for (_, message) in socket.receive() {
         match bincode::deserialize(&message).unwrap() {
             Message::MinoPlaced { mino } => {
                 info!("MinoPlaced: {:?}", mino);
-                place_mino_event_writer.send(PlaceMinoEvent {
-                    player_id: PlayerId(peer_id),
-                    mino,
-                });
+                // TODO: 他プレイヤーのフィールドの状態を更新
             }
             Message::GarbageSent { lines } => {
                 info!("LineSent: {}", lines);
@@ -112,45 +96,9 @@ pub fn receive_message_system(
     }
 }
 
-pub fn handle_local_place_mino(
-    mut commands: Commands,
-    mut socket: ResMut<MatchboxSocket<SingleChannel>>,
-    field_query: Query<&Field, With<LocalField>>,
-    mut mino_query: Query<(Entity, &Mino)>,
-    mut local_place_mino_event_reader: EventReader<LocalPlaceMinoEvent>,
-    mut place_mino_event_writer: EventWriter<PlaceMinoEvent>,
-    mut spwan_mino_event_writer: EventWriter<SpawnMinoEvent>,
-) {
-    for _ in local_place_mino_event_reader.iter() {
-        let Ok(field) = field_query.get_single() else { return; };
-        let (mino_entity, &mino) = mino_query.get_single_mut().unwrap();
+pub fn send_garbage(Socket(socket): &mut Socket, player_id: PlayerId, lines: u8) {
+    let message = Message::GarbageSent { lines };
+    let message = bincode::serialize(&message).unwrap().into_boxed_slice();
 
-        let place_mino_event = PlaceMinoEvent {
-            player_id: field.player_id,
-            mino,
-        };
-
-        place_mino_event_writer.send(place_mino_event);
-        commands.entity(mino_entity).despawn_recursive();
-        spwan_mino_event_writer.send(SpawnMinoEvent);
-
-        let message = Message::from(place_mino_event);
-        for peer_id in socket.connected_peers().collect::<Vec<_>>().iter() {
-            let message = bincode::serialize(&message).unwrap().into_boxed_slice();
-            socket.send(message, *peer_id);
-        }
-    }
-}
-
-pub fn handle_local_send_garbage(
-    mut socket: ResMut<MatchboxSocket<SingleChannel>>,
-    mut local_send_lines_events: EventReader<LocalSendGarbageEvent>,
-) {
-    for event in local_send_lines_events.iter() {
-        let message = Message::GarbageSent { lines: event.lines };
-        let message = bincode::serialize(&message).unwrap().into_boxed_slice();
-
-        let Some(peer_id) = socket.connected_peers().find(|&peer_id| peer_id == event.player_id.0) else { continue; };
-        socket.send(message, peer_id);
-    }
+    socket.send(message, player_id.0);
 }
