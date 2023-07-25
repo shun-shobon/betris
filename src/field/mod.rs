@@ -21,7 +21,8 @@ pub const FIELD_MAX_HEIGHT: i8 = FIELD_HEIGHT + 20;
 pub const FIELD_PIXEL_WIDTH: f32 = BLOCK_SIZE * FIELD_WIDTH as f32;
 pub const FIELD_PIXEL_HEIGHT: f32 = BLOCK_SIZE * FIELD_HEIGHT as f32;
 
-pub const NEXT_HOLD_BLOCK_SIZE: f32 = BLOCK_SIZE * 0.5;
+pub const NEXT_HOLD_BLOCK_SIZE: f32 = BLOCK_SIZE * 0.6;
+pub const NEXT_HOLD_BLOCK_INSET: f32 = BLOCK_INSET * 0.6;
 pub const NEXT_HOLD_BG_PADDING: f32 = NEXT_HOLD_BLOCK_SIZE * 0.5;
 pub const NEXT_HOLD_BG_WIDTH: f32 = NEXT_HOLD_BLOCK_SIZE * 4.0 + NEXT_HOLD_BG_PADDING * 2.0;
 pub const NEXT_HOLD_BG_HEIGHT: f32 = NEXT_HOLD_BLOCK_SIZE * 2.0 + NEXT_HOLD_BG_PADDING * 2.0;
@@ -103,8 +104,8 @@ fn create_next_hold_block_bundle(translation: Vec3, color: Color) -> (SpriteBund
                 color,
                 anchor: Anchor::BottomLeft,
                 custom_size: Some(Vec2::new(
-                    NEXT_HOLD_BLOCK_SIZE - BLOCK_INSET,
-                    NEXT_HOLD_BLOCK_SIZE - BLOCK_INSET,
+                    NEXT_HOLD_BLOCK_SIZE - NEXT_HOLD_BLOCK_INSET,
+                    NEXT_HOLD_BLOCK_SIZE - NEXT_HOLD_BLOCK_INSET,
                 )),
                 ..default()
             },
