@@ -2,7 +2,10 @@ use std::time::Duration;
 
 use bevy::prelude::*;
 
-use crate::movement::{Direction, MoveEvent};
+use crate::{
+    field::local::HoldEvent,
+    movement::{Direction, MoveEvent},
+};
 
 const MOVE_REPLEAT_DELAY: Duration = Duration::from_millis(300);
 const MOVE_REPLEAT_INTERVAL: Duration = Duration::from_millis(30);
@@ -24,6 +27,7 @@ pub fn keyboard_input_system(
     time: Res<Time>,
     mut repeat_timer: ResMut<KeyboardRepeatTimer>,
     mut move_event_writer: EventWriter<MoveEvent>,
+    mut hold_event_writer: EventWriter<HoldEvent>,
 ) {
     if keyboard_input.just_pressed(KeyCode::Left) {
         repeat_timer.0.set_duration(MOVE_REPLEAT_DELAY);
@@ -62,5 +66,9 @@ pub fn keyboard_input_system(
         move_event_writer.send(MoveEvent::StartSoftDrop);
     } else if keyboard_input.just_released(KeyCode::Down) {
         move_event_writer.send(MoveEvent::StopSoftDrop);
+    }
+
+    if keyboard_input.just_pressed(KeyCode::ShiftLeft) {
+        hold_event_writer.send(HoldEvent);
     }
 }

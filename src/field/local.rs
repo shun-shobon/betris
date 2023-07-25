@@ -4,7 +4,10 @@ use super::{
     timer::{DropTimer, LockDownTimer, TargetChangeTimer},
     FIELD_PIXEL_WIDTH,
 };
-use crate::{mino::t_spin::TSpin, net::PlayerId};
+use crate::{
+    mino::{event::SpawnMinoEvent, shape::Shape, t_spin::TSpin, Mino},
+    net::PlayerId,
+};
 use bevy::{prelude::*, sprite::Anchor};
 
 static GARBAGE_WARN_BAR_COLOR: Color = Color::rgb(1.0, 0.0, 0.0);
@@ -17,6 +20,9 @@ static GARBAGE_WARN_BAR_START_Y: f32 = -FIELD_PIXEL_WIDTH / 2.0;
 #[derive(Debug, Event)]
 pub struct ReceiveGarbageEvent(pub u8);
 
+#[derive(Debug, Event)]
+pub struct HoldEvent;
+
 #[derive(Component, Default)]
 pub struct LocalField {
     pub can_back_to_back: bool,
@@ -25,6 +31,8 @@ pub struct LocalField {
     pub garbage_amount: u8,
     pub target_player_id: Option<PlayerId>,
     pub next_queue: NextQueue,
+    pub hold: Option<Shape>,
+    pub is_hold_used: bool,
 }
 
 #[derive(Bundle, Default)]
@@ -66,6 +74,33 @@ pub fn handle_receive_garbage(
     let Ok(mut local_field) = local_field_query.get_single_mut() else { return; };
     for ReceiveGarbageEvent(lines) in receive_garbage_events.iter() {
         local_field.garbage_amount += lines;
+    }
+}
+
+pub fn handle_hold(
+    mut commands: Commands,
+    mut events: EventReader<HoldEvent>,
+    mut local_field_query: Query<&mut LocalField>,
+    mut mino_query: Query<(Entity, &Mino)>,
+    mut spawn_mino_events: EventWriter<SpawnMinoEvent>,
+) {
+    let Ok(mut local_field) = local_field_query.get_single_mut() else { return; };
+    for _ in events.iter() {
+        if local_field.is_hold_used {
+            continue;
+        }
+        local_field.is_hold_used = true;
+
+        let (mino_entity, mino) = mino_query.get_single_mut().unwrap();
+        commands.entity(mino_entity).despawn_recursive();
+        let next_shape = if let Some(shape) = local_field.hold {
+            shape
+        } else {
+            local_field.next_queue.pop()
+        };
+        local_field.hold = Some(mino.shape);
+
+        spawn_mino_events.send(SpawnMinoEvent(next_shape));
     }
 }
 

@@ -59,17 +59,18 @@ pub fn drop_timer_system(
 pub fn lock_down_timer_system(
     mut commands: Commands,
     time: Res<Time>,
-    mut lock_down_timer_query: Query<&mut LockDownTimer>,
+    mut field_query: Query<(&mut LocalField, &mut LockDownTimer)>,
     mino_query: Query<(Entity, &Mino)>,
     mut place_mino_event_writer: EventWriter<PlaceMinoEvent>,
     mut spwan_mino_event_writer: EventWriter<SpawnMinoEvent>,
 ) {
-    let Ok(mut lock_down_timer) = lock_down_timer_query.get_single_mut() else { return; };
+    let Ok((mut local_field, mut lock_down_timer)) = field_query.get_single_mut() else { return; };
     if lock_down_timer.0.tick(time.delta()).just_finished() {
         let Ok((mino_entity, mino)) = mino_query.get_single() else { return; };
         commands.entity(mino_entity).despawn_recursive();
         place_mino_event_writer.send(PlaceMinoEvent(*mino));
-        spwan_mino_event_writer.send(SpawnMinoEvent);
+        spwan_mino_event_writer.send(SpawnMinoEvent(local_field.next_queue.pop()));
+        local_field.is_hold_used = false;
     }
 }
 

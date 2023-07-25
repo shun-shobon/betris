@@ -1,8 +1,9 @@
-use super::{t_spin::TSpin, Mino};
+use super::{shape::Shape, t_spin::TSpin, Mino};
 use crate::{
     field::{
         blocks::{Garbages, Lines},
         local::LocalField,
+        timer::DropTimer,
         Field,
     },
     net::{send_garbage, sync_local_field_change, PlayerId, Players, Socket},
@@ -10,7 +11,7 @@ use crate::{
 use bevy::prelude::*;
 
 #[derive(Event)]
-pub struct SpawnMinoEvent;
+pub struct SpawnMinoEvent(pub Shape);
 
 #[derive(Event)]
 pub struct SyncFieldChangeEvent {
@@ -26,15 +27,14 @@ pub struct PlaceMinoEvent(pub Mino);
 pub fn handle_spawn_mino(
     mut commands: Commands,
     mut events: EventReader<SpawnMinoEvent>,
-    mut field_query: Query<(Entity, &mut LocalField)>,
+    mut field_query: Query<(Entity, &mut DropTimer), With<LocalField>>,
 ) {
-    for _ in events.iter() {
-        let Ok((field_entity, mut local_field)) = field_query.get_single_mut() else { continue; };
+    let Ok((field_entity, mut drop_timer)) = field_query.get_single_mut() else { return; };
 
-        let mino_shape = local_field.next_queue.pop();
-
-        let mino_entity = Mino::new(mino_shape).spawn(&mut commands);
+    for SpawnMinoEvent(shape) in events.iter() {
+        let mino_entity = Mino::new(*shape).spawn(&mut commands);
         commands.entity(field_entity).add_child(mino_entity);
+        drop_timer.0.reset();
     }
 }
 

@@ -23,7 +23,10 @@ use bevy::{
 };
 use field::{
     block::field_block_system,
-    local::{garbage_warning_bar_system, handle_receive_garbage, ReceiveGarbageEvent},
+    local::{
+        garbage_warning_bar_system, handle_hold, handle_receive_garbage, HoldEvent, LocalField,
+        ReceiveGarbageEvent,
+    },
     next_hold_block_system,
     timer::{drop_timer_system, lock_down_timer_system, target_change_timer_system},
 };
@@ -70,6 +73,7 @@ fn main() {
         .add_event::<SpawnMinoEvent>()
         .add_event::<PlaceMinoEvent>()
         .add_event::<MoveEvent>()
+        .add_event::<HoldEvent>()
         .add_event::<ReceiveGarbageEvent>()
         .add_event::<SyncFieldChangeEvent>()
         .insert_resource(KeyboardRepeatTimer::default())
@@ -94,6 +98,7 @@ fn main() {
                 handle_move,
                 handle_spawn_mino,
                 handle_place_mino,
+                handle_hold,
                 handle_receive_garbage,
                 handle_sync_field_change,
             )
@@ -132,6 +137,10 @@ fn camera_system(
     }
 }
 
-fn setup_game(mut spawn_mino_events: EventWriter<SpawnMinoEvent>) {
-    spawn_mino_events.send(SpawnMinoEvent);
+fn setup_game(
+    mut field_query: Query<&mut LocalField>,
+    mut spawn_mino_events: EventWriter<SpawnMinoEvent>,
+) {
+    let Ok(mut field) = field_query.get_single_mut() else { return; };
+    spawn_mino_events.send(SpawnMinoEvent(field.next_queue.pop()));
 }
