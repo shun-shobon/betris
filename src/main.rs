@@ -24,6 +24,7 @@ use bevy::{
 use field::{
     block::field_block_system,
     local::{garbage_warning_bar_system, handle_receive_garbage, ReceiveGarbageEvent},
+    next_hold_block_system,
     timer::{drop_timer_system, lock_down_timer_system, target_change_timer_system},
 };
 use fps::{fps_system, setup_fps};
@@ -80,7 +81,7 @@ fn main() {
             waiting_for_player_system.run_if(in_state(AppState::MatchMaking)),
         )
         .add_systems(OnEnter(AppState::Playing), setup_game)
-        .add_systems(PreUpdate, (field_block_system, garbage_warning_bar_system))
+        .add_systems(PreUpdate, (field_block_system, next_hold_block_system))
         .add_systems(
             Update,
             (
@@ -89,6 +90,7 @@ fn main() {
                 target_change_timer_system,
                 keyboard_input_system,
                 receive_message_system,
+                garbage_warning_bar_system,
                 handle_move,
                 handle_spawn_mino,
                 handle_place_mino,

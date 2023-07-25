@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 use crate::mino::shape::Shape;
 use rand::prelude::*;
 
-const QUEUE_SIZE: usize = 6;
+pub const QUEUE_SIZE: usize = 6;
 
 pub struct NextQueue {
     queue: VecDeque<Shape>,
