@@ -5,7 +5,7 @@ use crate::{
     position::Position,
 };
 
-pub const BLOCK_SIZE: f32 = 40.0;
+pub const BLOCK_SIZE: f32 = 30.0;
 pub const BLOCK_INSET: f32 = 1.0;
 
 use super::Field;

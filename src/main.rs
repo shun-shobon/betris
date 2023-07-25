@@ -15,7 +15,11 @@ pub mod net;
 pub mod position;
 
 use bevy::{
-    diagnostic::FrameTimeDiagnosticsPlugin, log::LogPlugin, prelude::*, render::camera::ScalingMode,
+    diagnostic::FrameTimeDiagnosticsPlugin,
+    log::LogPlugin,
+    prelude::*,
+    render::camera::ScalingMode,
+    window::{WindowResized, WindowResolution},
 };
 use field::{
     block::field_block_system,
@@ -30,6 +34,10 @@ use mino::event::{
 };
 use movement::{handle_move, MoveEvent};
 use net::{receive_message_system, setup_matchbox_socket, waiting_for_player_system};
+
+const WINDOW_WIDTH: f32 = 1280.0;
+const WINDOW_HEIGHT: f32 = 720.0;
+const WINDOW_ASPECT: f32 = WINDOW_WIDTH / WINDOW_HEIGHT;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, States)]
 pub enum AppState {
@@ -49,6 +57,7 @@ fn main() {
                 .set(WindowPlugin {
                     primary_window: Some(Window {
                         title: "Tetris".into(),
+                        resolution: WindowResolution::new(WINDOW_WIDTH, WINDOW_HEIGHT),
                         ..default()
                     }),
                     ..default()
@@ -63,7 +72,7 @@ fn main() {
         .add_event::<SyncFieldChangeEvent>()
         .insert_resource(KeyboardRepeatTimer::default())
         .add_systems(Startup, (setup, setup_fps))
-        .add_systems(Update, fps_system)
+        .add_systems(Update, (camera_system, fps_system))
         .add_systems(OnEnter(AppState::MatchMaking), setup_matchbox_socket)
         .add_systems(
             Update,
@@ -91,9 +100,25 @@ fn main() {
 }
 
 fn setup(mut commands: Commands) {
-    let mut camera_bundle = Camera2dBundle::default();
-    camera_bundle.projection.scaling_mode = ScalingMode::FixedVertical(1000.);
-    commands.spawn(camera_bundle);
+    commands.spawn(Camera2dBundle::default());
+}
+
+fn camera_system(
+    mut resize_events: EventReader<WindowResized>,
+    window_query: Query<&Window>,
+    mut projection_query: Query<&mut OrthographicProjection, With<Camera>>,
+) {
+    for _ in resize_events.iter() {
+        let Ok(window) = window_query.get_single() else { return; };
+        let Ok(mut projection) = projection_query.get_single_mut() else { return; };
+
+        let window_aspect = window.width() / window.height();
+        if window_aspect > WINDOW_ASPECT {
+            projection.scaling_mode = ScalingMode::FixedVertical(WINDOW_HEIGHT);
+        } else {
+            projection.scaling_mode = ScalingMode::FixedHorizontal(WINDOW_WIDTH);
+        }
+    }
 }
 
 fn setup_game(mut spawn_mino_events: EventWriter<SpawnMinoEvent>) {

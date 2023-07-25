@@ -74,12 +74,12 @@ pub fn waiting_for_player_system(
     info!("All player has joined, starting game!");
 
     let my_player_id = PlayerId(socket.id().unwrap());
-    Field::new(my_player_id).spawn(&mut commands, true, Vec3::new(-500., 0., 0.));
+    Field::new(my_player_id).spawn(&mut commands, true, Vec3::new(-350., 0., 0.));
 
     let player_ids = socket.connected_peers().map(PlayerId).collect::<Vec<_>>();
     for player_id in player_ids.iter() {
         // TODO: 大人数でも正しく並べる
-        Field::new(*player_id).spawn(&mut commands, false, Vec3::new(500., 0., 0.));
+        Field::new(*player_id).spawn(&mut commands, false, Vec3::new(350., 0., 0.));
     }
 
     let players = Players(player_ids);
