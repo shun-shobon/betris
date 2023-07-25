@@ -12,6 +12,7 @@ use bevy_matchbox::prelude::*;
 use serde::{Deserialize, Serialize};
 
 pub const NUM_PLAYERS: usize = 2;
+const SIGNALING_SERVER_URL: &str = "ws://127.0.0.1:3536";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PlayerId(PeerId);
@@ -37,7 +38,7 @@ enum Message {
 pub fn setup_matchbox_socket(mut commands: Commands) {
     let room_id = "tetris";
 
-    let room_url = format!("ws://127.0.0.1:3536/{}", room_id);
+    let room_url = format!("{}/{}?next={}", SIGNALING_SERVER_URL, room_id, NUM_PLAYERS);
     info!("Connecting to matchbox server: {}", room_url);
 
     let builer = WebRtcSocketBuilder::new(room_url).add_channel(ChannelConfig::reliable());
