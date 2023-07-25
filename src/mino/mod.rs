@@ -31,8 +31,8 @@ impl Mino {
     pub fn new(shape: Shape) -> Self {
         Self {
             pos: pos!(
-                (FIELD_WIDTH - shape.size()) / 2,
-                FIELD_HEIGHT - 2, // TODO: 20行目が埋まっている場合は21行目に出現させる
+                (FIELD_WIDTH - shape.width()) / 2,
+                FIELD_HEIGHT - 2 - shape.spawn_y_offset(), // TODO: 20行目が埋まっている場合は21行目に出現させる
             ),
             angle: Angle::default(),
             shape,

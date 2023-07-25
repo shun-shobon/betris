@@ -2,7 +2,7 @@ use super::{
     block::BLOCK_SIZE,
     next::NextQueue,
     timer::{DropTimer, LockDownTimer, TargetChangeTimer},
-    FIELD_HEIGHT, FIELD_WIDTH,
+    FIELD_PIXEL_WIDTH,
 };
 use crate::{mino::t_spin::TSpin, net::PlayerId};
 use bevy::{prelude::*, sprite::Anchor};
@@ -10,10 +10,9 @@ use bevy::{prelude::*, sprite::Anchor};
 static GARBAGE_WARN_BAR_COLOR: Color = Color::rgb(1.0, 0.0, 0.0);
 static GARBAGE_WARN_BAR_WIDTH: f32 = 20.0;
 static GARBAGE_WARN_BAR_INSET: f32 = 4.0;
-static GARBAGE_WARN_BAR_START_X: f32 = -(BLOCK_SIZE * FIELD_WIDTH as f32) / 2.0
-    - GARBAGE_WARN_BAR_WIDTH / 2.0
-    - GARBAGE_WARN_BAR_INSET;
-static GARBAGE_WARN_BAR_START_Y: f32 = -(BLOCK_SIZE * FIELD_HEIGHT as f32) / 2.0;
+static GARBAGE_WARN_BAR_START_X: f32 =
+    -FIELD_PIXEL_WIDTH / 2.0 - GARBAGE_WARN_BAR_WIDTH / 2.0 - GARBAGE_WARN_BAR_INSET;
+static GARBAGE_WARN_BAR_START_Y: f32 = -FIELD_PIXEL_WIDTH / 2.0;
 
 #[derive(Debug, Event)]
 pub struct ReceiveGarbageEvent(pub u8);
