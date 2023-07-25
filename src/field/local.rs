@@ -21,7 +21,7 @@ pub struct ReceiveGarbageEvent(pub u8);
 #[derive(Component)]
 pub struct LocalField {
     pub can_back_to_back: bool,
-    pub ren: u8,
+    pub combo: u8,
     pub t_spin: TSpin,
     pub garbage_amount: u8,
     pub target_player_id: Option<PlayerId>,
@@ -43,7 +43,7 @@ impl Default for LocalField {
     fn default() -> Self {
         Self {
             can_back_to_back: false,
-            ren: 0,
+            combo: 0,
             t_spin: TSpin::default(),
             garbage_amount: 0,
             target_player_id: None,

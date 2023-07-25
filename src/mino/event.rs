@@ -68,9 +68,9 @@ pub fn handle_place_mino(
         // フィールドの状態を更新
         if !clear_lines.is_empty() {
             local_field.can_back_to_back = is_difficult_clear(&clear_lines, &local_field);
-            local_field.ren += 1;
+            local_field.combo += 1;
         } else {
-            local_field.ren = 0;
+            local_field.combo = 0;
         }
 
         // おじゃま行を送る
@@ -116,7 +116,7 @@ fn get_garbage_amount(clear_lines: &Lines, local_field: &LocalField, field: &Fie
     };
 
     // RENボーナス
-    let ren_bonus = match local_field.ren {
+    let combo_bonus = match local_field.combo {
         0..=1 => 0,
         2..=3 => 1,
         4..=5 => 2,
@@ -133,7 +133,7 @@ fn get_garbage_amount(clear_lines: &Lines, local_field: &LocalField, field: &Fie
             0
         };
 
-    basic + ren_bonus + back_to_back_bonus
+    basic + combo_bonus + back_to_back_bonus
 }
 
 // テトリスやTスピンといった難しいライン消去か
