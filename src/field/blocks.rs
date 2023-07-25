@@ -78,8 +78,26 @@ impl Blocks {
         }
     }
 
-    pub fn add_garbages(&mut self, _garbage_lines: &Garbages) {
-        // TODO: おじゃまラインの実装
+    pub fn add_garbages(&mut self, garbages: &Garbages) {
+        for y in (0..(FIELD_MAX_HEIGHT as usize - 1 - garbages.len())).rev() {
+            self.0[y + garbages.len()] = self.0[y];
+        }
+
+        for (y, hole_x) in garbages.0.iter().rev().enumerate() {
+            for x in 0..(FIELD_WIDTH as usize) {
+                self.0[y][x] = if x == *hole_x as usize {
+                    Block::Empty
+                } else {
+                    Block::Garbage
+                };
+            }
+        }
+    }
+
+    pub fn is_gameorver(&self, garbages: &Garbages) -> bool {
+        !self.0[(FIELD_MAX_HEIGHT as usize - garbages.len())..(FIELD_MAX_HEIGHT as usize)]
+            .iter()
+            .all(|line| line.iter().all(Block::is_empty))
     }
 
     pub fn is_empty(&self) -> bool {
