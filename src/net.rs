@@ -1,5 +1,9 @@
 use crate::{
-    field::{local::ReceiveGarbageEvent, Field, Garbages, Lines},
+    field::{
+        blocks::{Garbages, Lines},
+        local::ReceiveGarbageEvent,
+        Field,
+    },
     mino::{event::SyncFieldChangeEvent, Mino},
     AppState,
 };

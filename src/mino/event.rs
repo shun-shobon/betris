@@ -1,6 +1,10 @@
 use super::{t_spin::TSpin, Mino};
 use crate::{
-    field::{local::LocalField, Field, Garbages, Lines},
+    field::{
+        blocks::{Garbages, Lines},
+        local::LocalField,
+        Field,
+    },
     net::{send_garbage, sync_local_field_change, PlayerId, Players, Socket},
 };
 use bevy::prelude::*;
