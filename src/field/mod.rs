@@ -1,7 +1,7 @@
 pub mod block;
 pub mod blocks;
 pub mod local;
-pub mod random;
+pub mod next;
 pub mod timer;
 
 use self::{

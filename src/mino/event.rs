@@ -31,7 +31,7 @@ pub fn handle_spawn_mino(
     for _ in events.iter() {
         let Ok((field_entity, mut local_field)) = field_query.get_single_mut() else { continue; };
 
-        let mino_shape = local_field.random_bag.next().unwrap();
+        let mino_shape = local_field.next_queue.pop();
 
         let mino_entity = Mino::new(mino_shape).spawn(&mut commands);
         commands.entity(field_entity).add_child(mino_entity);

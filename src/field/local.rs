@@ -1,6 +1,6 @@
 use super::{
     block::BLOCK_SIZE,
-    random::RandomBag,
+    next::NextQueue,
     timer::{DropTimer, LockDownTimer, TargetChangeTimer},
     FIELD_HEIGHT, FIELD_WIDTH,
 };
@@ -18,14 +18,14 @@ static GARBAGE_WARN_BAR_START_Y: f32 = -(BLOCK_SIZE * FIELD_HEIGHT as f32) / 2.0
 #[derive(Debug, Event)]
 pub struct ReceiveGarbageEvent(pub u8);
 
-#[derive(Component)]
+#[derive(Component, Default)]
 pub struct LocalField {
     pub can_back_to_back: bool,
     pub combo: u8,
     pub t_spin: TSpin,
     pub garbage_amount: u8,
     pub target_player_id: Option<PlayerId>,
-    pub random_bag: RandomBag,
+    pub next_queue: NextQueue,
 }
 
 #[derive(Bundle, Default)]
@@ -38,19 +38,6 @@ pub struct LocalFieldBundle {
 
 #[derive(Component)]
 pub struct GarbageWarningBar;
-
-impl Default for LocalField {
-    fn default() -> Self {
-        Self {
-            can_back_to_back: false,
-            combo: 0,
-            t_spin: TSpin::default(),
-            garbage_amount: 0,
-            target_player_id: None,
-            random_bag: RandomBag::new(),
-        }
-    }
-}
 
 impl GarbageWarningBar {
     pub fn spawn(parent: &mut ChildBuilder) {
