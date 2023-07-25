@@ -5,7 +5,7 @@ pub mod timer;
 
 use self::{
     block::{Block, BLOCK_SIZE},
-    local::LocalFieldBundle,
+    local::{GarbageWarningBar, LocalFieldBundle},
 };
 use crate::{mino::Mino, net::PlayerId, pos, position::Position};
 use bevy::prelude::*;
@@ -42,7 +42,10 @@ impl Field {
         if is_local_field {
             field_commands
                 .insert(LocalFieldBundle::default())
-                .with_children(spawn_grid)
+                .with_children(|parent| {
+                    spawn_grid(parent);
+                    GarbageWarningBar::spawn(parent);
+                })
                 .id()
         } else {
             field_commands.with_children(spawn_grid).id()
@@ -103,7 +106,7 @@ impl Blocks {
             .iter()
             .enumerate()
             .filter(|(_, line)| line.iter().all(Block::is_filled))
-            .map(|(y, _)| y as i8)
+            .map(|(y, _)| y as u8)
             .rev()
             .collect::<Vec<_>>();
 
@@ -112,7 +115,7 @@ impl Blocks {
 
     pub fn clear_lines(&mut self, full_filled_lines: &Lines) {
         for &clear_y in &full_filled_lines.0 {
-            for y in clear_y..(FIELD_MAX_HEIGHT - 1) {
+            for y in clear_y..(FIELD_MAX_HEIGHT as u8 - 1) {
                 self.0[y as usize] = self.0[(y + 1) as usize];
             }
             self.0[(FIELD_MAX_HEIGHT - 1) as usize] = [Block::default(); FIELD_WIDTH as usize];
@@ -133,7 +136,7 @@ impl Blocks {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Lines(Vec<i8>);
+pub struct Lines(Vec<u8>);
 
 impl Lines {
     pub fn len(&self) -> usize {
@@ -146,10 +149,10 @@ impl Lines {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Garbages(Vec<i8>);
+pub struct Garbages(Vec<u8>);
 
 impl Garbages {
-    pub fn from_amount(amount: i8) -> Self {
+    pub fn from_amount(amount: u8) -> Self {
         // 一度のおじゃま送信では70%の確率で同じ列に穴が出来る
         let vec = (0..amount)
             .scan(None, |prev, _| match *prev {
@@ -180,8 +183,8 @@ impl Garbages {
     }
 }
 
-fn get_random_x() -> i8 {
-    rand::thread_rng().gen_range(0..FIELD_WIDTH)
+fn get_random_x() -> u8 {
+    rand::thread_rng().gen_range(0..(FIELD_WIDTH as u8))
 }
 
 fn spawn_grid(parent: &mut ChildBuilder) {

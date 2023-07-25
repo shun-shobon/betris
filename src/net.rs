@@ -26,7 +26,7 @@ enum Message {
         garbage_lines: Garbages,
     },
     GarbageSent {
-        amount: i8,
+        amount: u8,
     },
 }
 
@@ -115,7 +115,7 @@ pub fn receive_message_system(
     }
 }
 
-pub fn send_garbage(Socket(socket): &mut Socket, player_id: PlayerId, amount: i8) {
+pub fn send_garbage(Socket(socket): &mut Socket, player_id: PlayerId, amount: u8) {
     let message = Message::GarbageSent { amount };
     let message = bincode::serialize(&message).unwrap().into_boxed_slice();
 

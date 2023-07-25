@@ -78,7 +78,8 @@ pub fn handle_place_mino(
         }
 
         // おじゃま行を受け取る
-        let garbage_lines = Garbages::from_amount(local_field.garbage_lines.iter().sum());
+        let garbage_lines = Garbages::from_amount(local_field.garbage_amount);
+        local_field.garbage_amount = 0;
         field.blocks.add_garbages(&garbage_lines);
 
         // フィールドの状態の変更を通知
@@ -86,7 +87,7 @@ pub fn handle_place_mino(
     }
 }
 
-fn get_garbage_amount(clear_lines: &Lines, local_field: &LocalField, field: &Field) -> i8 {
+fn get_garbage_amount(clear_lines: &Lines, local_field: &LocalField, field: &Field) -> u8 {
     if clear_lines.is_empty() {
         return 0;
     }
