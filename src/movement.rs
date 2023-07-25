@@ -3,6 +3,7 @@ use bevy::prelude::*;
 use crate::{
     field::{local::LocalField, Field},
     mino::{shape::Shape, Angle, Mino, TSpin},
+    pos,
     position::Position,
     timer::{DROP_INTERVAL, SOFT_DROP_INTERVAL},
 };
@@ -25,9 +26,9 @@ pub enum Direction {
 impl Direction {
     pub fn move_delta(&self) -> Position {
         match self {
-            Self::Left => Position::new(-1, 0),
-            Self::Right => Position::new(1, 0),
-            Self::Down => Position::new(0, -1),
+            Self::Left => pos!(-1, 0),
+            Self::Right => pos!(1, 0),
+            Self::Down => pos!(0, -1),
         }
     }
 }
@@ -75,28 +76,35 @@ pub fn handle_move(
                 let new_angle = get_new_angle(mino.angle, *direction);
                 let deltas = get_srs_deltas(mino.angle, new_angle, mino.shape);
 
-                let Some(delta) = deltas.iter().find_map(|&delta| {
-                    if !is_collision(mino.shape.blocks(new_angle), &mino.pos, delta, field) {
-                        Some(delta)
-                    } else {
-                        None
-                    }
-                }) else { return; };
+                if let Some(&delta) = deltas.iter().find(|&delta| {
+                    !is_collision(mino.shape.blocks(new_angle), &mino.pos, *delta, field)
+                }) {
+                    mino.pos += delta;
+                    mino.angle = new_angle;
+                    local_field.lock_down_timer.reset();
+                    local_field.lock_down_timer.pause();
 
-                mino.pos += delta;
-                mino.angle = new_angle;
-                local_field.lock_down_timer.reset();
-                local_field.lock_down_timer.pause();
-
-                mino.t_spin = if is_t_spin(&mino, field) {
-                    if is_t_spin_mini(&mino, field, delta) {
-                        TSpin::Mini
+                    mino.t_spin = if is_t_spin(&mino, field) {
+                        if is_t_spin_mini(&mino, field, delta) {
+                            TSpin::Mini
+                        } else {
+                            TSpin::Full
+                        }
                     } else {
-                        TSpin::Full
-                    }
-                } else {
-                    TSpin::None
-                };
+                        TSpin::None
+                    };
+                }
+
+                let is_landed = is_collision(
+                    mino.shape.blocks(mino.angle),
+                    &mino.pos,
+                    Direction::Down.move_delta(),
+                    field,
+                );
+                if is_landed {
+                    local_field.drop_timer.reset();
+                    local_field.lock_down_timer.unpause();
+                }
             }
             MoveEvent::StartSoftDrop => {
                 let Ok((_, mut local_field)) = field_query.get_single_mut() else { continue; };
@@ -106,53 +114,6 @@ pub fn handle_move(
                 let Ok((_, mut local_field)) = field_query.get_single_mut() else { continue; };
                 local_field.drop_timer.set_duration(DROP_INTERVAL);
             }
-        }
-    }
-}
-
-fn get_new_angle(angle: Angle, direction: Direction) -> Angle {
-    use self::Direction::*;
-    use Angle::*;
-
-    match (angle, direction) {
-        (Deg0, Left) => Deg270,
-        (Deg0, Right) => Deg90,
-        (Deg90, Left) => Deg0,
-        (Deg90, Right) => Deg180,
-        (Deg180, Left) => Deg90,
-        (Deg180, Right) => Deg270,
-        (Deg270, Left) => Deg180,
-        (Deg270, Right) => Deg0,
-        (_, Down) => unreachable!(),
-    }
-}
-
-fn get_srs_deltas(angle: Angle, new_angle: Angle, shape: Shape) -> &'static [Position] {
-    use Angle::*;
-
-    if shape != Shape::I {
-        match (angle, new_angle) {
-            (Deg0, Deg90) => SRS_DELTAS_0_TO_90,
-            (Deg90, Deg0) => SRS_DELTAS_90_TO_0,
-            (Deg90, Deg180) => SRS_DELTAS_90_TO_180,
-            (Deg180, Deg90) => SRS_DELTAS_180_TO_90,
-            (Deg180, Deg270) => SRS_DELTAS_180_TO_270,
-            (Deg270, Deg180) => SRS_DELTAS_270_TO_180,
-            (Deg270, Deg0) => SRS_DELTAS_270_TO_0,
-            (Deg0, Deg270) => SRS_DELTAS_0_TO_270,
-            (_, _) => unreachable!(),
-        }
-    } else {
-        match (angle, new_angle) {
-            (Deg0, Deg90) => SRS_DELTAS_0_TO_90_I_MINO,
-            (Deg90, Deg0) => SRS_DELTAS_90_TO_0_I_MINO,
-            (Deg90, Deg180) => SRS_DELTAS_90_TO_180_I_MINO,
-            (Deg180, Deg90) => SRS_DELTAS_180_TO_90_I_MINO,
-            (Deg180, Deg270) => SRS_DELTAS_180_TO_270_I_MINO,
-            (Deg270, Deg180) => SRS_DELTAS_270_TO_180_I_MINO,
-            (Deg270, Deg0) => SRS_DELTAS_270_TO_0_I_MINO,
-            (Deg0, Deg270) => SRS_DELTAS_0_TO_270_I_MINO,
-            (_, _) => unreachable!(),
         }
     }
 }
@@ -214,129 +175,78 @@ fn is_t_spin_mini(mino: &Mino, field: &Field, delta: Position) -> bool {
     }
 }
 
-static SRS_DELTAS_0_TO_90: &[Position] = &[
-    Position::new(0, 0),
-    Position::new(-1, 0),
-    Position::new(-1, 1),
-    Position::new(0, -2),
-    Position::new(-1, -2),
-];
-static SRS_DELTAS_90_TO_0: &[Position] = &[
-    Position::new(0, 0),
-    Position::new(1, 0),
-    Position::new(1, -1),
-    Position::new(0, 2),
-    Position::new(1, 2),
-];
-static SRS_DELTAS_90_TO_180: &[Position] = &[
-    Position::new(0, 0),
-    Position::new(1, 0),
-    Position::new(1, -1),
-    Position::new(0, 2),
-    Position::new(1, 2),
-];
-static SRS_DELTAS_180_TO_90: &[Position] = &[
-    Position::new(0, 0),
-    Position::new(-1, 0),
-    Position::new(-1, 1),
-    Position::new(0, -2),
-    Position::new(-1, -2),
-];
-static SRS_DELTAS_180_TO_270: &[Position] = &[
-    Position::new(0, 0),
-    Position::new(1, 0),
-    Position::new(1, 1),
-    Position::new(0, -2),
-    Position::new(1, -2),
-];
-static SRS_DELTAS_270_TO_180: &[Position] = &[
-    Position::new(0, 0),
-    Position::new(-1, 0),
-    Position::new(-1, -1),
-    Position::new(0, 2),
-    Position::new(-1, 2),
-];
-static SRS_DELTAS_270_TO_0: &[Position] = &[
-    Position::new(0, 0),
-    Position::new(-1, 0),
-    Position::new(-1, -1),
-    Position::new(0, 2),
-    Position::new(-1, 2),
-];
-static SRS_DELTAS_0_TO_270: &[Position] = &[
-    Position::new(0, 0),
-    Position::new(1, 0),
-    Position::new(1, 1),
-    Position::new(0, -2),
-    Position::new(1, -2),
-];
+fn get_new_angle(angle: Angle, direction: Direction) -> Angle {
+    use self::Direction::*;
+    use Angle::*;
 
-static SRS_DELTAS_0_TO_90_I_MINO: &[Position] = &[
-    Position::new(0, 0),
-    Position::new(-2, 0),
-    Position::new(1, 0),
-    Position::new(-2, -1),
-    Position::new(1, 2),
-];
-static SRS_DELTAS_90_TO_0_I_MINO: &[Position] = &[
-    Position::new(0, 0),
-    Position::new(2, 0),
-    Position::new(-1, 0),
-    Position::new(2, 1),
-    Position::new(-1, -2),
-];
-static SRS_DELTAS_90_TO_180_I_MINO: &[Position] = &[
-    Position::new(0, 0),
-    Position::new(-1, 0),
-    Position::new(2, 0),
-    Position::new(-1, 2),
-    Position::new(2, -1),
-];
-static SRS_DELTAS_180_TO_90_I_MINO: &[Position] = &[
-    Position::new(0, 0),
-    Position::new(1, 0),
-    Position::new(-2, 0),
-    Position::new(1, -2),
-    Position::new(-2, 1),
-];
-static SRS_DELTAS_180_TO_270_I_MINO: &[Position] = &[
-    Position::new(0, 0),
-    Position::new(2, 0),
-    Position::new(-1, 0),
-    Position::new(2, 1),
-    Position::new(-1, -2),
-];
-static SRS_DELTAS_270_TO_180_I_MINO: &[Position] = &[
-    Position::new(0, 0),
-    Position::new(-2, 0),
-    Position::new(1, 0),
-    Position::new(-2, -1),
-    Position::new(1, 2),
-];
-static SRS_DELTAS_270_TO_0_I_MINO: &[Position] = &[
-    Position::new(0, 0),
-    Position::new(1, 0),
-    Position::new(-2, 0),
-    Position::new(1, -2),
-    Position::new(-2, 1),
-];
-static SRS_DELTAS_0_TO_270_I_MINO: &[Position] = &[
-    Position::new(0, 0),
-    Position::new(-1, 0),
-    Position::new(2, 0),
-    Position::new(-1, 2),
-    Position::new(2, -1),
-];
+    match (angle, direction) {
+        (Deg0, Left) => Deg270,
+        (Deg0, Right) => Deg90,
+        (Deg90, Left) => Deg0,
+        (Deg90, Right) => Deg180,
+        (Deg180, Left) => Deg90,
+        (Deg180, Right) => Deg270,
+        (Deg270, Left) => Deg180,
+        (Deg270, Right) => Deg0,
+        (_, Down) => unreachable!(),
+    }
+}
 
-static T_SPIN_CHECK_POSITIONS: &[Position] = &[
-    Position::new(0, 0),
-    Position::new(2, 0),
-    Position::new(0, 2),
-    Position::new(2, 2),
-];
-static T_SPIN_MINI_CHECK_POSITIONS: &[&[Position]] = &[
-    &[Position::new(0, 2), Position::new(2, 2)],
-    &[Position::new(2, 2), Position::new(2, 0)],
-    &[Position::new(2, 0), Position::new(0, 0)],
-    &[Position::new(0, 0), Position::new(0, 2)],
+fn get_srs_deltas(angle: Angle, new_angle: Angle, shape: Shape) -> &'static [Position] {
+    use Angle::*;
+
+    if shape != Shape::I {
+        match (angle, new_angle) {
+            (Deg0, Deg90) => &SRS_DELTAS_0_TO_90,
+            (Deg90, Deg0) => &SRS_DELTAS_90_TO_0,
+            (Deg90, Deg180) => &SRS_DELTAS_90_TO_180,
+            (Deg180, Deg90) => &SRS_DELTAS_180_TO_90,
+            (Deg180, Deg270) => &SRS_DELTAS_180_TO_270,
+            (Deg270, Deg180) => &SRS_DELTAS_270_TO_180,
+            (Deg270, Deg0) => &SRS_DELTAS_270_TO_0,
+            (Deg0, Deg270) => &SRS_DELTAS_0_TO_270,
+            (_, _) => unreachable!(),
+        }
+    } else {
+        match (angle, new_angle) {
+            (Deg0, Deg90) => &SRS_DELTAS_0_TO_90_I,
+            (Deg90, Deg0) => &SRS_DELTAS_90_TO_0_I,
+            (Deg90, Deg180) => &SRS_DELTAS_90_TO_180_I,
+            (Deg180, Deg90) => &SRS_DELTAS_180_TO_90_I,
+            (Deg180, Deg270) => &SRS_DELTAS_180_TO_270_I,
+            (Deg270, Deg180) => &SRS_DELTAS_270_TO_180_I,
+            (Deg270, Deg0) => &SRS_DELTAS_270_TO_0_I,
+            (Deg0, Deg270) => &SRS_DELTAS_0_TO_270_I,
+            (_, _) => unreachable!(),
+        }
+    }
+}
+
+type SRSDeltas = [Position; 5];
+
+static SRS_DELTAS_0_TO_90: SRSDeltas = pos![(0, 0), (-1, 0), (-1, 1), (0, -2), (-1, -2)];
+static SRS_DELTAS_90_TO_0: SRSDeltas = pos![(0, 0), (1, 0), (1, -1), (0, 2), (1, 2)];
+static SRS_DELTAS_90_TO_180: SRSDeltas = pos![(0, 0), (1, 0), (1, -1), (0, 2), (1, 2)];
+static SRS_DELTAS_180_TO_90: SRSDeltas = pos![(0, 0), (-1, 0), (-1, 1), (0, -2), (-1, -2)];
+static SRS_DELTAS_180_TO_270: SRSDeltas = pos![(0, 0), (1, 0), (1, 1), (0, -2), (1, -2)];
+static SRS_DELTAS_270_TO_180: SRSDeltas = pos![(0, 0), (-1, 0), (-1, -1), (0, 2), (-1, 2)];
+static SRS_DELTAS_270_TO_0: SRSDeltas = pos![(0, 0), (-1, 0), (-1, -1), (0, 2), (-1, 2)];
+static SRS_DELTAS_0_TO_270: SRSDeltas = pos![(0, 0), (1, 0), (1, 1), (0, -2), (1, -2)];
+
+static SRS_DELTAS_0_TO_90_I: SRSDeltas = pos![(0, 0), (-2, 0), (1, 0), (-2, -1), (1, 2)];
+static SRS_DELTAS_90_TO_0_I: SRSDeltas = pos![(0, 0), (2, 0), (-1, 0), (2, 1), (-1, -2)];
+static SRS_DELTAS_90_TO_180_I: SRSDeltas = pos![(0, 0), (-1, 0), (2, 0), (-1, 2), (2, -1)];
+
+static SRS_DELTAS_180_TO_90_I: SRSDeltas = pos![(0, 0), (1, 0), (-2, 0), (1, -2), (-2, 1)];
+static SRS_DELTAS_180_TO_270_I: SRSDeltas = pos![(0, 0), (2, 0), (-1, 0), (2, 1), (-1, -2)];
+static SRS_DELTAS_270_TO_180_I: SRSDeltas = pos![(0, 0), (-2, 0), (1, 0), (-2, -1), (1, 2)];
+static SRS_DELTAS_270_TO_0_I: SRSDeltas = pos![(0, 0), (1, 0), (-2, 0), (1, -2), (-2, 1)];
+static SRS_DELTAS_0_TO_270_I: SRSDeltas = pos![(0, 0), (-1, 0), (2, 0), (-1, 2), (2, -1)];
+
+static T_SPIN_CHECK_POSITIONS: [Position; 4] = pos![(0, 0), (2, 0), (0, 2), (2, 2)];
+static T_SPIN_MINI_CHECK_POSITIONS: [[Position; 2]; 4] = [
+    pos![(0, 2), (2, 2)],
+    pos![(2, 2), (2, 0)],
+    pos![(2, 0), (0, 0)],
+    pos![(0, 0), (0, 2)],
 ];

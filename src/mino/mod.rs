@@ -4,6 +4,7 @@ pub mod shape;
 use self::shape::Shape;
 use crate::{
     field::{FIELD_HEIGHT, FIELD_WIDTH},
+    pos,
     position::Position,
 };
 use bevy::prelude::*;
@@ -37,7 +38,7 @@ pub enum Angle {
 impl Mino {
     pub fn new(shape: Shape) -> Self {
         Self {
-            pos: Position::new(
+            pos: pos!(
                 (FIELD_WIDTH - shape.size()) / 2,
                 FIELD_HEIGHT - 2, // TODO: 20行目が埋まっている場合は21行目に出現させる
             ),

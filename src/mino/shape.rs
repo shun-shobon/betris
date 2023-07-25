@@ -1,7 +1,6 @@
 use super::Angle;
-use crate::{field::block::Block, position::Position};
+use crate::{field::block::Block, pos, position::Position};
 use bevy::prelude::*;
-use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -18,7 +17,7 @@ pub enum Shape {
 impl Shape {
     pub const COUNT: usize = 7;
 
-    pub fn size(&self) -> i8 {
+    pub const fn size(&self) -> i8 {
         match self {
             Self::I => 4,
             Self::J | Self::L | Self::S | Self::T | Self::Z => 3,
@@ -45,99 +44,23 @@ impl Shape {
     }
 }
 
-type MinoShapes = [Vec<Position>; 4];
-
-static I_SHAPES: Lazy<MinoShapes> = Lazy::new(|| {
-    define_mino_shapes(
-        &[
-            Position::new(0, 2),
-            Position::new(1, 2),
-            Position::new(2, 2),
-            Position::new(3, 2),
-        ],
-        Shape::I,
-    )
-});
-static J_SHAPES: Lazy<MinoShapes> = Lazy::new(|| {
-    define_mino_shapes(
-        &[
-            Position::new(0, 2),
-            Position::new(0, 1),
-            Position::new(1, 1),
-            Position::new(2, 1),
-        ],
-        Shape::J,
-    )
-});
-static L_SHAPES: Lazy<MinoShapes> = Lazy::new(|| {
-    define_mino_shapes(
-        &[
-            Position::new(2, 2),
-            Position::new(0, 1),
-            Position::new(1, 1),
-            Position::new(2, 1),
-        ],
-        Shape::L,
-    )
-});
-static O_SHAPES: Lazy<MinoShapes> = Lazy::new(|| {
-    define_mino_shapes(
-        &[
-            Position::new(0, 0),
-            Position::new(1, 0),
-            Position::new(0, 1),
-            Position::new(1, 1),
-        ],
-        Shape::O,
-    )
-});
-static S_SHAPES: Lazy<MinoShapes> = Lazy::new(|| {
-    define_mino_shapes(
-        &[
-            Position::new(1, 2),
-            Position::new(2, 2),
-            Position::new(0, 1),
-            Position::new(1, 1),
-        ],
-        Shape::S,
-    )
-});
-static T_SHAPES: Lazy<MinoShapes> = Lazy::new(|| {
-    define_mino_shapes(
-        &[
-            Position::new(1, 2),
-            Position::new(0, 1),
-            Position::new(1, 1),
-            Position::new(2, 1),
-        ],
-        Shape::T,
-    )
-});
-static Z_SHAPES: Lazy<MinoShapes> = Lazy::new(|| {
-    define_mino_shapes(
-        &[
-            Position::new(0, 2),
-            Position::new(1, 2),
-            Position::new(1, 1),
-            Position::new(2, 1),
-        ],
-        Shape::Z,
-    )
-});
-
-fn define_mino_shapes(deg0_pos: &[Position], shape: Shape) -> [Vec<Position>; 4] {
-    let deg90_pos = deg0_pos
-        .iter()
-        .map(|pos| Position::new(pos.y, 1 - (pos.x - (shape.size() - 2))))
-        .collect::<Vec<_>>();
-    let deg180_pos = deg0_pos
-        .iter()
-        .map(|pos| Position::new((shape.size() - 1) - pos.x, (shape.size() - 1) - pos.y))
-        .collect::<Vec<_>>();
-    let deg270_pos = deg0_pos
-        .iter()
-        .map(|pos| Position::new(1 - (pos.y - (shape.size() - 2)), pos.x))
-        .collect::<Vec<_>>();
-
-    [deg0_pos.to_vec(), deg90_pos, deg180_pos, deg270_pos]
+macro_rules! define_shape {
+    ($shape:expr; $(($x:expr, $y:expr)),*) => {
+        [
+            [$(pos!($x, $y)),*],
+            [$(pos!($y, 1 - ($x - ($shape.size() - 2)))),*],
+            [$(pos!(($shape.size() - 1) - $x, ($shape.size() - 1) - $y)),*],
+            [$(pos!(1 - ($y - ($shape.size() - 2)), $x)),*],
+        ]
+    };
 }
+
+type MinoShapes = [[Position; 4]; 4];
+
+static I_SHAPES: MinoShapes = define_shape!(Shape::I; (0, 2), (1, 2), (2, 2), (3, 2));
+static J_SHAPES: MinoShapes = define_shape!(Shape::J; (0, 2), (0, 1), (1, 1), (2, 1));
+static L_SHAPES: MinoShapes = define_shape!(Shape::L; (2, 2), (0, 1), (1, 1), (2, 1));
+static O_SHAPES: MinoShapes = define_shape!(Shape::O; (0, 2), (1, 2), (0, 1), (1, 1));
+static S_SHAPES: MinoShapes = define_shape!(Shape::S; (1, 2), (2, 2), (0, 1), (1, 1));
+static T_SHAPES: MinoShapes = define_shape!(Shape::T; (1, 2), (0, 1), (1, 1), (2, 1));
+static Z_SHAPES: MinoShapes = define_shape!(Shape::Z; (0, 2), (1, 2), (1, 1), (2, 1));

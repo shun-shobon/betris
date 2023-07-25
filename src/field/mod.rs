@@ -5,7 +5,7 @@ use self::{
     block::{Block, BLOCK_SIZE},
     local::LocalField,
 };
-use crate::{mino::Mino, net::PlayerId, position::Position};
+use crate::{mino::Mino, net::PlayerId, pos, position::Position};
 use bevy::prelude::*;
 
 pub const FIELD_WIDTH: i8 = 10;
@@ -89,7 +89,7 @@ impl Blocks {
         self.0.iter().enumerate().flat_map(|(y, line)| {
             line.iter()
                 .enumerate()
-                .map(move |(x, block)| (Position::new(x as i8, y as i8), block))
+                .map(move |(x, block)| (pos!(x as i8, y as i8), block))
         })
     }
 

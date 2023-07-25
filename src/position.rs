@@ -9,6 +9,16 @@ pub struct Position {
     pub y: i8,
 }
 
+#[macro_export]
+macro_rules! pos {
+    ($(($x:expr, $y:expr)),*) => {
+        [$(pos!($x, $y)),*]
+    };
+    ($x:expr, $y:expr $(,)?) => {
+        Position::new($x, $y)
+    };
+}
+
 impl Position {
     pub fn translation(self) -> Vec3 {
         Vec3::new(
