@@ -1,7 +1,7 @@
 pub mod event;
 pub mod shape;
 
-use self::shape::MinoShape;
+use self::shape::Shape;
 use crate::{
     field::{FIELD_HEIGHT, FIELD_WIDTH},
     position::Position,
@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 pub struct Mino {
     pub pos: Position,
     pub angle: Angle,
-    pub shape: MinoShape,
+    pub shape: Shape,
     pub t_spin: TSpin,
 }
 
@@ -35,7 +35,7 @@ pub enum Angle {
 }
 
 impl Mino {
-    pub fn new(shape: MinoShape) -> Self {
+    pub fn new(shape: Shape) -> Self {
         Self {
             pos: Position::new(
                 (FIELD_WIDTH - shape.size()) / 2,

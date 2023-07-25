@@ -1,6 +1,6 @@
 use super::{Mino, TSpin};
 use crate::{
-    field::{block::FieldBlock, local::LocalField, Field, FIELD_MAX_HEIGHT, FIELD_WIDTH},
+    field::{local::LocalField, Field},
     net::{LocalSendGarbageEvent, PlayerId},
 };
 use bevy::prelude::*;
@@ -38,41 +38,20 @@ pub fn handle_place_mino(
     for PlaceMinoEvent { player_id, mino } in place_mino_events.iter() {
         let Some((mut field, local_field)) = field_query.iter_mut().find(|(field, _)| field.player_id == *player_id) else { continue; };
 
-        for &block_pos in mino.shape.blocks(mino.angle).iter() {
-            let pos = block_pos + mino.pos;
-            field.lines[pos.y as usize][pos.x as usize] = mino.shape.into();
-        }
+        field.blocks.place_mino(mino);
 
-        let clear_lines = field
-            .lines
-            .iter()
-            .enumerate()
-            .filter(|(_, line)| line.iter().all(|field_block| !field_block.is_empty()))
-            .map(|(y, _)| y as i8)
-            .rev()
-            .collect::<Vec<_>>();
-
-        clear_line(&mut field, &clear_lines);
+        let filled_lines = field.blocks.get_filled_lines();
+        field.blocks.clear_lines(&filled_lines);
 
         if let Some(mut local_field) = local_field {
             handle_local_field(
                 &field,
                 &mut local_field,
-                clear_lines.len(),
+                filled_lines.len(),
                 mino,
                 &mut local_send_line_events,
             );
         }
-    }
-}
-
-fn clear_line(field: &mut Field, clear_lines: &[i8]) {
-    for &clear_y in clear_lines {
-        for y in clear_y..(FIELD_MAX_HEIGHT - 1) {
-            field.lines[y as usize] = field.lines[(y + 1) as usize];
-        }
-        field.lines[(FIELD_MAX_HEIGHT - 1) as usize] =
-            [FieldBlock::default(); FIELD_WIDTH as usize];
     }
 }
 
@@ -148,15 +127,7 @@ fn get_garbage_lines(
         };
 
     // パーフェクトクリアの場合は+10
-    let perfect_clear_bonus = if field
-        .lines
-        .iter()
-        .all(|line| line.iter().all(|block| block.is_empty()))
-    {
-        10
-    } else {
-        0
-    };
+    let perfect_clear_bonus = if field.blocks.is_empty() { 10 } else { 0 };
 
     basic + len_bonus + back_to_back_bonus + perfect_clear_bonus
 }

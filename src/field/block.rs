@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::{
-    mino::{shape::MinoShape, Mino},
+    mino::{shape::Shape, Mino},
     position::Position,
 };
 
@@ -10,9 +10,8 @@ pub const BLOCK_INSET: f32 = 1.0;
 
 use super::Field;
 
-#[allow(clippy::module_name_repetitions)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Component)]
-pub enum FieldBlock {
+pub enum Block {
     #[default]
     Empty,
     Garbage,
@@ -25,39 +24,40 @@ pub enum FieldBlock {
     L,
 }
 
-impl FieldBlock {
-    #[must_use]
+impl Block {
     pub fn color(&self) -> Color {
-        use FieldBlock::{I, J, L, O, S, T, Z};
-
         match self {
-            I => Color::rgb(0.0, 1.0, 1.0),
-            J => Color::rgb(0.0, 0.0, 1.0),
-            L => Color::rgb(1.0, 0.5, 0.0),
-            O => Color::rgb(1.0, 1.0, 0.0),
-            S => Color::rgb(0.0, 1.0, 0.0),
-            T => Color::rgb(0.5, 0.0, 1.0),
-            Z => Color::rgb(1.0, 0.0, 0.0),
-            _ => unreachable!(),
+            Block::Empty => Color::NONE,
+            Block::I => Color::rgb(0.0, 1.0, 1.0),
+            Block::J => Color::rgb(0.0, 0.0, 1.0),
+            Block::L => Color::rgb(1.0, 0.5, 0.0),
+            Block::O => Color::rgb(1.0, 1.0, 0.0),
+            Block::S => Color::rgb(0.0, 1.0, 0.0),
+            Block::T => Color::rgb(0.5, 0.0, 1.0),
+            Block::Z => Color::rgb(1.0, 0.0, 0.0),
+            Block::Garbage => Color::rgb(0.5, 0.5, 0.5),
         }
     }
 
-    #[must_use]
     pub fn is_empty(&self) -> bool {
         self == &Self::Empty
     }
+
+    pub fn is_filled(&self) -> bool {
+        !self.is_empty()
+    }
 }
 
-impl From<MinoShape> for FieldBlock {
-    fn from(shape: MinoShape) -> Self {
+impl From<Shape> for Block {
+    fn from(shape: Shape) -> Self {
         match shape {
-            MinoShape::I => FieldBlock::I,
-            MinoShape::J => FieldBlock::J,
-            MinoShape::L => FieldBlock::L,
-            MinoShape::O => FieldBlock::O,
-            MinoShape::S => FieldBlock::S,
-            MinoShape::T => FieldBlock::T,
-            MinoShape::Z => FieldBlock::Z,
+            Shape::I => Block::I,
+            Shape::J => Block::J,
+            Shape::L => Block::L,
+            Shape::O => Block::O,
+            Shape::S => Block::S,
+            Shape::T => Block::T,
+            Shape::Z => Block::Z,
         }
     }
 }
@@ -69,7 +69,7 @@ impl From<MinoShape> for FieldBlock {
 )]
 pub fn field_block_system(
     mut commands: Commands,
-    field_block_query: Query<Entity, With<FieldBlock>>,
+    field_block_query: Query<Entity, With<Block>>,
     field_query: Query<(Entity, &Field)>,
     mino_query: Query<(Entity, &Mino)>,
 ) {
@@ -79,14 +79,8 @@ pub fn field_block_system(
 
     for (field_entity, field) in field_query.iter() {
         let field_block_bundles = field
-            .lines
-            .iter()
-            .enumerate()
-            .flat_map(|(y, row)| {
-                row.iter()
-                    .enumerate()
-                    .map(move |(x, block)| (Position::new(x as i8, y as i8), block))
-            })
+            .blocks
+            .indexed_iter()
             .filter(|(_, block)| !block.is_empty())
             .map(move |(pos, &block)| create_field_block_bundle(pos, block))
             .collect::<Vec<_>>();
@@ -115,7 +109,7 @@ pub fn field_block_system(
     }
 }
 
-fn create_field_block_bundle(pos: Position, block: FieldBlock) -> (SpriteBundle, FieldBlock) {
+fn create_field_block_bundle(pos: Position, block: Block) -> (SpriteBundle, Block) {
     let bundle = SpriteBundle {
         transform: Transform::from_translation(pos.translation()),
         sprite: Sprite {

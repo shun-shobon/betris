@@ -2,10 +2,10 @@ pub mod block;
 pub mod local;
 
 use self::{
-    block::{FieldBlock, BLOCK_SIZE},
+    block::{Block, BLOCK_SIZE},
     local::LocalField,
 };
-use crate::net::PlayerId;
+use crate::{mino::Mino, net::PlayerId, position::Position};
 use bevy::prelude::*;
 
 pub const FIELD_WIDTH: i8 = 10;
@@ -15,20 +15,18 @@ pub const FIELD_MAX_HEIGHT: i8 = FIELD_HEIGHT + 20;
 
 const FIELD_GRID_WIDTH: f32 = 1.;
 
-type Lines = [[FieldBlock; FIELD_WIDTH as usize]; FIELD_MAX_HEIGHT as usize];
-
 #[derive(Component)]
 pub struct Field {
     pub player_id: PlayerId,
-    pub lines: Lines,
+    pub blocks: Blocks,
 }
 
 impl Field {
-    #[must_use]
     pub fn new(player_id: PlayerId) -> Self {
-        let lines = [[FieldBlock::default(); FIELD_WIDTH as usize]; FIELD_MAX_HEIGHT as usize];
-
-        Self { player_id, lines }
+        Self {
+            player_id,
+            blocks: Blocks::default(),
+        }
     }
 
     pub fn spawn(self, commands: &mut Commands, is_local_field: bool, translation: Vec3) -> Entity {
@@ -45,6 +43,97 @@ impl Field {
         } else {
             field_commands.with_children(spawn_grid).id()
         }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct Blocks([[Block; FIELD_WIDTH as usize]; FIELD_MAX_HEIGHT as usize]);
+
+impl Default for Blocks {
+    fn default() -> Self {
+        Self([[Block::default(); FIELD_WIDTH as usize]; FIELD_MAX_HEIGHT as usize])
+    }
+}
+
+#[allow(
+    clippy::cast_sign_loss,
+    clippy::cast_possible_truncation,
+    clippy::cast_possible_wrap
+)]
+impl Blocks {
+    pub fn get(&self, pos: Position) -> Option<&Block> {
+        if Self::check_pos(pos) {
+            self.0.get(pos.y as usize)?.get(pos.x as usize)
+        } else {
+            None
+        }
+    }
+    pub fn get_mut(&mut self, pos: Position) -> Option<&mut Block> {
+        if Self::check_pos(pos) {
+            self.0.get_mut(pos.y as usize)?.get_mut(pos.x as usize)
+        } else {
+            None
+        }
+    }
+
+    pub fn place_mino(&mut self, mino: &Mino) {
+        for &block_pos in mino.shape.blocks(mino.angle).iter() {
+            let pos = block_pos + mino.pos;
+
+            let block = self.get_mut(pos).unwrap();
+            *block = mino.shape.into();
+        }
+    }
+
+    pub fn indexed_iter(&self) -> impl Iterator<Item = (Position, &Block)> {
+        self.0.iter().enumerate().flat_map(|(y, line)| {
+            line.iter()
+                .enumerate()
+                .map(move |(x, block)| (Position::new(x as i8, y as i8), block))
+        })
+    }
+
+    pub fn get_filled_lines(&self) -> FilledLines {
+        let full_filled_lines = self
+            .0
+            .iter()
+            .enumerate()
+            .filter(|(_, line)| line.iter().all(Block::is_filled))
+            .map(|(y, _)| y as i8)
+            .rev()
+            .collect::<Vec<_>>();
+
+        FilledLines(full_filled_lines)
+    }
+
+    pub fn clear_lines(&mut self, full_filled_lines: &FilledLines) {
+        for &clear_y in &full_filled_lines.0 {
+            for y in clear_y..(FIELD_MAX_HEIGHT - 1) {
+                self.0[y as usize] = self.0[(y + 1) as usize];
+            }
+            self.0[(FIELD_MAX_HEIGHT - 1) as usize] = [Block::default(); FIELD_WIDTH as usize];
+        }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.0.iter().all(|line| line.iter().all(Block::is_empty))
+    }
+
+    fn check_pos(pos: Position) -> bool {
+        0 <= pos.x && pos.x < FIELD_WIDTH && 0 <= pos.y && pos.y < FIELD_MAX_HEIGHT
+    }
+}
+
+#[derive(Debug)]
+pub struct FilledLines(Vec<i8>);
+
+impl FilledLines {
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
     }
 }
 

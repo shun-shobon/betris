@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 
 use crate::{
-    field::{local::LocalField, Field, FIELD_MAX_HEIGHT, FIELD_WIDTH},
-    mino::{shape::MinoShape, Angle, Mino, TSpin},
+    field::{local::LocalField, Field},
+    mino::{shape::Shape, Angle, Mino, TSpin},
     position::Position,
     timer::{DROP_INTERVAL, SOFT_DROP_INTERVAL},
 };
@@ -127,10 +127,10 @@ fn get_new_angle(angle: Angle, direction: Direction) -> Angle {
     }
 }
 
-fn get_srs_deltas(angle: Angle, new_angle: Angle, shape: MinoShape) -> &'static [Position] {
+fn get_srs_deltas(angle: Angle, new_angle: Angle, shape: Shape) -> &'static [Position] {
     use Angle::*;
 
-    if shape != MinoShape::I {
+    if shape != Shape::I {
         match (angle, new_angle) {
             (Deg0, Deg90) => SRS_DELTAS_0_TO_90,
             (Deg90, Deg0) => SRS_DELTAS_90_TO_0,
@@ -163,33 +163,32 @@ fn is_collision(
     delta: Position,
     field: &Field,
 ) -> bool {
-    !mino_blocks
+    mino_blocks
         .iter()
         .map(|&mino_block_pos| mino_block_pos + *mino_pos + delta)
-        .all(|pos| {
-            0 <= pos.x
-                && pos.x < FIELD_WIDTH
-                && 0 <= pos.y
-                && pos.y < FIELD_MAX_HEIGHT
-                && field.lines[pos.y as usize][pos.x as usize].is_empty()
+        .any(|pos| {
+            field
+                .blocks
+                .get(pos)
+                .map_or(true, |block| block.is_filled())
         })
 }
 
 // Tミノであり，Tミノの四隅が3箇所以上埋まっているとT-Spin
+// 壁や床は埋まっている扱い
 fn is_t_spin(mino: &Mino, field: &Field) -> bool {
-    if mino.shape != MinoShape::T {
+    if mino.shape != Shape::T {
         return false;
     }
 
     let fullfilled = T_SPIN_CHECK_POSITIONS
         .iter()
         .map(|&pos| pos + mino.pos)
-        .filter(|pos| {
-            !(0 <= pos.x
-                && pos.x < FIELD_WIDTH
-                && 0 <= pos.y
-                && pos.y < FIELD_MAX_HEIGHT
-                && field.lines[pos.y as usize][pos.x as usize].is_empty())
+        .filter(|&pos| {
+            field
+                .blocks
+                .get(pos)
+                .map_or(true, |block| block.is_filled())
         })
         .count();
 
@@ -207,11 +206,10 @@ fn is_t_spin_mini(mino: &Mino, field: &Field, delta: Position) -> bool {
             .iter()
             .map(|&pos| pos + mino.pos)
             .all(|pos| {
-                !(0 <= pos.x
-                    && pos.x < FIELD_WIDTH
-                    && 0 <= pos.y
-                    && pos.y < FIELD_MAX_HEIGHT
-                    && field.lines[pos.y as usize][pos.x as usize].is_empty())
+                field
+                    .blocks
+                    .get(pos)
+                    .map_or(true, |block| block.is_filled())
             })
     }
 }

@@ -1,11 +1,11 @@
-use crate::mino::shape::MinoShape;
+use crate::mino::shape::Shape;
 use rand::prelude::*;
 
-pub struct RandomBag(Vec<MinoShape>);
+pub struct RandomBag(Vec<Shape>);
 
 impl RandomBag {
     pub fn new() -> Self {
-        let mut bag = Self(Vec::with_capacity(MinoShape::COUNT));
+        let mut bag = Self(Vec::with_capacity(Shape::COUNT));
         bag.fill();
 
         bag
@@ -15,13 +15,13 @@ impl RandomBag {
         let mut rng = thread_rng();
 
         self.0 = vec![
-            MinoShape::I,
-            MinoShape::J,
-            MinoShape::L,
-            MinoShape::O,
-            MinoShape::S,
-            MinoShape::T,
-            MinoShape::Z,
+            Shape::I,
+            Shape::J,
+            Shape::L,
+            Shape::O,
+            Shape::S,
+            Shape::T,
+            Shape::Z,
         ];
         self.0.shuffle(&mut rng);
     }
@@ -34,7 +34,7 @@ impl Default for RandomBag {
 }
 
 impl Iterator for RandomBag {
-    type Item = MinoShape;
+    type Item = Shape;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.0.is_empty() {

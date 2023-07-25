@@ -1,5 +1,9 @@
 #[warn(clippy::all, clippy::pedantic)]
-#[allow(clippy::cast_lossless)]
+#[allow(
+    clippy::must_use_candidate,
+    clippy::cast_lossless,
+    clippy::missing_panics_doc
+)]
 pub mod field;
 pub mod fps;
 pub mod input;
