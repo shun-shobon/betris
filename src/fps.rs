@@ -3,6 +3,8 @@ use bevy::{
     prelude::*,
 };
 
+const FPS_TEXT_COLOR: Color = Color::GREEN;
+
 #[derive(Component)]
 pub struct FpsText;
 
@@ -14,13 +16,13 @@ pub fn setup_fps(mut commands: Commands) {
                     "FPS: ",
                     TextStyle {
                         font_size: 20.,
-                        color: Color::WHITE,
+                        color: FPS_TEXT_COLOR,
                         ..default()
                     },
                 ),
                 TextSection::from_style(TextStyle {
                     font_size: 20.,
-                    color: Color::WHITE,
+                    color: FPS_TEXT_COLOR,
                     ..default()
                 }),
             ])

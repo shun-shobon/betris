@@ -48,6 +48,7 @@ pub enum AppState {
 
 fn main() {
     App::new()
+        .insert_resource(ClearColor(Color::BLACK))
         .add_plugins(
             DefaultPlugins
                 .set(LogPlugin {
@@ -101,6 +102,14 @@ fn main() {
 
 fn setup(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
+    commands.spawn(SpriteBundle {
+        sprite: Sprite {
+            color: Color::WHITE,
+            custom_size: Some(Vec2::new(WINDOW_WIDTH, WINDOW_HEIGHT)),
+            ..default()
+        },
+        ..default()
+    });
 }
 
 fn camera_system(

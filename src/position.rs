@@ -15,7 +15,7 @@ macro_rules! pos {
         [$(pos!($x, $y)),*]
     };
     ($x:expr, $y:expr $(,)?) => {
-        Position::new($x, $y)
+        $crate::position::Position::new($x, $y)
     };
 }
 
