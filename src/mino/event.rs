@@ -64,9 +64,9 @@ pub fn handle_place_mino(
         // フィールドの状態を更新
         if !filled_lines.is_empty() {
             local_field.can_back_to_back = is_difficult_clear(&filled_lines, &local_field);
-            local_field.len += 1;
+            local_field.ren += 1;
         } else {
-            local_field.len = 0;
+            local_field.ren = 0;
         }
 
         // おじゃま行を送る
@@ -91,23 +91,29 @@ fn get_garbage_amount(clear_lines: &FilledLines, local_field: &LocalField, field
         return 0;
     }
 
+    // パーフェクトクリアの場合は10固定
+    if field.blocks.is_empty() {
+        return 10;
+    }
+
     // 基本のおじゃま行数
     let basic = match (clear_lines.len(), local_field.t_spin) {
-        (1, TSpin::None) => 0,                    // Single
-        (2, TSpin::None) => 1,                    // Double
-        (3, TSpin::None) => 2,                    // Triple
-        (4, TSpin::None) => 4,                    // Tetris
-        (1, TSpin::Mini) | (2, TSpin::Mini) => 0, // T-Spin Mini
-        (1, TSpin::Full) => 2,                    // T-Spin Single
-        (2, TSpin::Full) => 4,                    // T-Spin Double
-        (3, TSpin::Full) => 6,                    // T-Spin Triple
+        (1, TSpin::None) => 0, // Single
+        (2, TSpin::None) => 1, // Double
+        (3, TSpin::None) => 2, // Triple
+        (4, TSpin::None) => 4, // Tetris
+        (1, TSpin::Mini) => 0, // T-Spin Mini Single
+        (2, TSpin::Mini) => 1, // T-Spin Mini Double
+        (1, TSpin::Full) => 2, // T-Spin Single
+        (2, TSpin::Full) => 4, // T-Spin Double
+        (3, TSpin::Full) => 6, // T-Spin Triple
         _ => unreachable!(),
     };
 
-    // LENボーナス
-    let len_bonus = match local_field.len {
-        0 => 0,
-        1..=3 => 1,
+    // RENボーナス
+    let ren_bonus = match local_field.ren {
+        0..=1 => 0,
+        2..=3 => 1,
         4..=5 => 2,
         6..=7 => 3,
         8..=10 => 4,
@@ -122,10 +128,7 @@ fn get_garbage_amount(clear_lines: &FilledLines, local_field: &LocalField, field
             0
         };
 
-    // パーフェクトクリアの場合は+10
-    let perfect_clear_bonus = if field.blocks.is_empty() { 10 } else { 0 };
-
-    basic + len_bonus + back_to_back_bonus + perfect_clear_bonus
+    basic + ren_bonus + back_to_back_bonus
 }
 
 // テトリスやTスピンといった難しいライン消去か

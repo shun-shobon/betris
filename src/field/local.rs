@@ -24,7 +24,7 @@ pub struct GarbageLine;
 #[derive(Component)]
 pub struct LocalField {
     pub can_back_to_back: bool,
-    pub len: u8,
+    pub ren: u8,
     pub t_spin: TSpin,
     pub garbage_lines: VecDeque<i8>,
     pub target_player_id: Option<PlayerId>,
@@ -43,7 +43,7 @@ impl Default for LocalField {
     fn default() -> Self {
         Self {
             can_back_to_back: false,
-            len: 0,
+            ren: 0,
             t_spin: TSpin::default(),
             garbage_lines: VecDeque::new(),
             target_player_id: None,
