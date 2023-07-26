@@ -106,8 +106,9 @@ pub fn next_hold_block_system(
     });
 }
 
-fn create_next_hold_block_bundle(translation: Vec3, color: Color) -> (SpriteBundle, NextHoldBlock) {
+fn create_next_hold_block_bundle(translation: Vec3, color: Color) -> impl Bundle {
     (
+        NextHoldBlock,
         SpriteBundle {
             transform: Transform::from_translation(translation),
             sprite: Sprite {
@@ -121,7 +122,6 @@ fn create_next_hold_block_bundle(translation: Vec3, color: Color) -> (SpriteBund
             },
             ..default()
         },
-        NextHoldBlock,
     )
 }
 
