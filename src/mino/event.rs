@@ -7,6 +7,7 @@ use crate::{
         Field,
     },
     net::{send_garbage, sync_local_field_change, PlayerId, Players, Socket},
+    state::GameOverEvent,
 };
 use bevy::prelude::*;
 
@@ -28,15 +29,18 @@ pub fn handle_spawn_mino(
     mut commands: Commands,
     mut events: EventReader<SpawnMinoEvent>,
     mut field_query: Query<(Entity, &Field, &mut DropTimer), With<LocalField>>,
+    mut gameover_events: EventWriter<GameOverEvent>,
 ) {
     let Ok((field_entity, field, mut drop_timer)) = field_query.get_single_mut() else { return; };
 
     for SpawnMinoEvent(shape) in events.iter() {
-        if let Ok(mino) = Mino::new(*shape, field) {
+        if let Some(mino) = Mino::new(*shape, field) {
             let mino_entity = mino.spawn(&mut commands);
             commands.entity(field_entity).add_child(mino_entity);
 
             drop_timer.0.reset();
+        } else {
+            gameover_events.send(GameOverEvent);
         }
     }
 }
@@ -46,14 +50,15 @@ pub fn handle_sync_field_change(
     mut field_query: Query<&mut Field>,
 ) {
     for event in events.iter() {
-        let Some(mut field) = field_query.iter_mut().find(|field| field.player_id == event.player_id) else { continue; };
+        let Some(mut field) = field_query.iter_mut().find(|field| field.player.id == event.player_id) else { continue; };
 
         field.blocks.place_mino(&event.mino);
         field.blocks.clear_lines(&event.clear_lines);
-        field.blocks.add_garbages(&event.garbage_lines);
+        let _ = field.blocks.add_garbages(&event.garbage_lines);
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn handle_place_mino(
     mut commands: Commands,
     mut events: EventReader<PlaceMinoEvent>,
@@ -62,6 +67,7 @@ pub fn handle_place_mino(
     mut field_query: Query<(&mut Field, &mut LocalField)>,
     mino_query: Query<(Entity, &Mino)>,
     mut spawn_mino_events: EventWriter<SpawnMinoEvent>,
+    mut gameover_events: EventWriter<GameOverEvent>,
 ) {
     for _ in events.iter() {
         let Ok((mut field, mut local_field)) = field_query.get_single_mut() else { continue; };
@@ -92,13 +98,17 @@ pub fn handle_place_mino(
         // おじゃま行を受け取る
         let garbage_lines = Garbages::from_amount(local_field.garbage_amount);
         local_field.garbage_amount = 0;
-        field.blocks.add_garbages(&garbage_lines);
-
         local_field.is_hold_used = false;
-        spawn_mino_events.send(SpawnMinoEvent(local_field.next_queue.pop()));
+        let is_gameover = field.blocks.add_garbages(&garbage_lines).is_err();
 
         // フィールドの状態の変更を通知
         sync_local_field_change(&mut socket, &players, *mino, clear_lines, garbage_lines);
+
+        if is_gameover {
+            gameover_events.send(GameOverEvent);
+        } else {
+            spawn_mino_events.send(SpawnMinoEvent(local_field.next_queue.pop()));
+        }
     }
 }
 

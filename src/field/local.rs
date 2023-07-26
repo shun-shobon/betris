@@ -1,12 +1,13 @@
 use super::{
-    block::BLOCK_SIZE,
-    next::NextQueue,
+    block::{BLOCK_INSET, BLOCK_SIZE},
+    next::{NextQueue, QUEUE_SIZE},
     timer::{DropTimer, LockDownTimer, TargetChangeTimer},
-    FIELD_PIXEL_HEIGHT, FIELD_PIXEL_WIDTH,
+    FIELD_BACKGROUND_COLOR, FIELD_PIXEL_HEIGHT, FIELD_PIXEL_WIDTH,
 };
 use crate::{
-    mino::{event::SpawnMinoEvent, shape::Shape, t_spin::TSpin, Mino},
+    mino::{event::SpawnMinoEvent, shape::Shape, t_spin::TSpin, Angle, Mino},
     net::PlayerId,
+    position::Position,
 };
 use bevy::{prelude::*, sprite::Anchor};
 
@@ -16,6 +17,16 @@ static GARBAGE_WARN_BAR_INSET: f32 = 4.0;
 static GARBAGE_WARN_BAR_START_X: f32 =
     -FIELD_PIXEL_WIDTH / 2.0 - GARBAGE_WARN_BAR_WIDTH / 2.0 - GARBAGE_WARN_BAR_INSET;
 static GARBAGE_WARN_BAR_START_Y: f32 = -FIELD_PIXEL_HEIGHT / 2.0;
+
+pub const NEXT_HOLD_BLOCK_SIZE: f32 = BLOCK_SIZE * 0.6;
+pub const NEXT_HOLD_BLOCK_INSET: f32 = BLOCK_INSET * 0.6;
+pub const NEXT_HOLD_BG_PADDING: f32 = NEXT_HOLD_BLOCK_SIZE * 0.5;
+pub const NEXT_HOLD_BG_WIDTH: f32 = NEXT_HOLD_BLOCK_SIZE * 4.0 + NEXT_HOLD_BG_PADDING * 2.0;
+pub const NEXT_HOLD_BG_HEIGHT: f32 = NEXT_HOLD_BLOCK_SIZE * 2.0 + NEXT_HOLD_BG_PADDING * 2.0;
+pub const NEXT_START_X: f32 =
+    FIELD_PIXEL_WIDTH / 2.0 + NEXT_HOLD_BG_PADDING + NEXT_HOLD_BG_WIDTH / 2.0;
+pub const HOLD_START_X: f32 = -NEXT_START_X;
+pub const NEXT_HOLD_BG_START_Y: f32 = FIELD_PIXEL_HEIGHT / 2.0 - NEXT_HOLD_BG_HEIGHT / 2.0;
 
 #[derive(Debug, Event)]
 pub struct ReceiveGarbageEvent(pub u8);
@@ -45,6 +56,9 @@ pub struct LocalFieldBundle {
 
 #[derive(Component)]
 pub struct GarbageWarningBar;
+
+#[derive(Component)]
+pub struct NextHoldBlock;
 
 impl GarbageWarningBar {
     pub fn spawn(parent: &mut ChildBuilder) {
@@ -121,4 +135,98 @@ pub fn garbage_warning_bar_system(
         GARBAGE_WARN_BAR_WIDTH,
         local_field.garbage_amount as f32 * BLOCK_SIZE - GARBAGE_WARN_BAR_INSET,
     ));
+}
+
+pub fn next_hold_block_system(
+    mut commands: Commands,
+    block_query: Query<Entity, With<NextHoldBlock>>,
+    field_query: Query<(Entity, &LocalField), With<LocalField>>,
+) {
+    for entity in block_query.iter() {
+        commands.entity(entity).despawn_recursive();
+    }
+
+    let Ok((field_entity, field)) = field_query.get_single() else { return; };
+    commands.entity(field_entity).with_children(|parent| {
+        for (i, shape) in field.next_queue.queue().iter().enumerate() {
+            let base = next_pos(i);
+
+            for &pos in shape.blocks(Angle::default()) {
+                let translation = base + pos_to_translation(pos, shape.offset_y(), shape.width());
+
+                let bundle = create_next_hold_block_bundle(translation, shape.color());
+                parent.spawn(bundle);
+            }
+        }
+
+        if let Some(shape) = field.hold {
+            let base = Vec3::new(HOLD_START_X, NEXT_HOLD_BG_START_Y, 0.0);
+
+            for &pos in shape.blocks(Angle::default()) {
+                let translation = base + pos_to_translation(pos, shape.offset_y(), shape.width());
+
+                let bundle = create_next_hold_block_bundle(translation, shape.color());
+                parent.spawn(bundle);
+            }
+        }
+    });
+}
+
+pub fn spawn_next_hold_background(parent: &mut ChildBuilder) {
+    let next_hold_sprite = Sprite {
+        color: FIELD_BACKGROUND_COLOR,
+        custom_size: Some(Vec2::new(NEXT_HOLD_BG_WIDTH, NEXT_HOLD_BG_HEIGHT)),
+        ..default()
+    };
+
+    for i in 0..QUEUE_SIZE {
+        let translation = next_pos(i);
+
+        parent.spawn(SpriteBundle {
+            transform: Transform::from_translation(translation),
+            sprite: next_hold_sprite.clone(),
+            ..default()
+        });
+    }
+
+    parent.spawn(SpriteBundle {
+        transform: Transform::from_translation(Vec3::new(HOLD_START_X, NEXT_HOLD_BG_START_Y, 0.0)),
+        sprite: next_hold_sprite,
+        ..default()
+    });
+}
+
+fn create_next_hold_block_bundle(translation: Vec3, color: Color) -> impl Bundle {
+    (
+        NextHoldBlock,
+        SpriteBundle {
+            transform: Transform::from_translation(translation),
+            sprite: Sprite {
+                color,
+                anchor: Anchor::BottomLeft,
+                custom_size: Some(Vec2::new(
+                    NEXT_HOLD_BLOCK_SIZE - NEXT_HOLD_BLOCK_INSET,
+                    NEXT_HOLD_BLOCK_SIZE - NEXT_HOLD_BLOCK_INSET,
+                )),
+                ..default()
+            },
+            ..default()
+        },
+    )
+}
+
+#[allow(clippy::cast_precision_loss)]
+fn next_pos(i: usize) -> Vec3 {
+    Vec3::new(
+        NEXT_START_X,
+        NEXT_HOLD_BG_START_Y - (NEXT_HOLD_BG_HEIGHT + NEXT_HOLD_BG_PADDING) * i as f32,
+        0.0,
+    )
+}
+
+fn pos_to_translation(pos: Position, offset_y: i8, width: i8) -> Vec3 {
+    let x = (pos.x as f32 - width as f32 / 2.0) * NEXT_HOLD_BLOCK_SIZE;
+    let y = (pos.y - offset_y - 1) as f32 * NEXT_HOLD_BLOCK_SIZE;
+
+    Vec3::new(x, y, 0.0)
 }

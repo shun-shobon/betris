@@ -4,7 +4,8 @@
     clippy::cast_lossless,
     clippy::missing_panics_doc,
     clippy::needless_pass_by_value,
-    clippy::module_name_repetitions
+    clippy::module_name_repetitions,
+    clippy::missing_errors_doc
 )]
 pub mod field;
 pub mod fps;
@@ -25,10 +26,10 @@ use bevy::{
 use field::{
     block::field_block_system,
     local::{
-        garbage_warning_bar_system, handle_hold, handle_receive_garbage, HoldEvent, LocalField,
-        ReceiveGarbageEvent,
+        garbage_warning_bar_system, handle_hold, handle_receive_garbage, next_hold_block_system,
+        HoldEvent, LocalField, ReceiveGarbageEvent,
     },
-    next_hold_block_system,
+    result_text_system,
     timer::{drop_timer_system, lock_down_timer_system, target_change_timer_system},
 };
 use fps::{fps_system, setup_fps};
@@ -39,7 +40,7 @@ use mino::event::{
 };
 use movement::{handle_move, MoveEvent};
 use net::{receive_message_system, setup_matchbox_socket, waiting_for_player_system};
-use state::AppState;
+use state::{handle_gameover, handle_state_change, AppState, GameOverEvent, StateChangeEvent};
 
 const WINDOW_WIDTH: f32 = 1280.0;
 const WINDOW_HEIGHT: f32 = 720.0;
@@ -71,6 +72,8 @@ fn main() {
         .add_event::<HoldEvent>()
         .add_event::<ReceiveGarbageEvent>()
         .add_event::<SyncFieldChangeEvent>()
+        .add_event::<GameOverEvent>()
+        .add_event::<StateChangeEvent>()
         .insert_resource(KeyboardRepeatTimer::default())
         .add_systems(Startup, (setup, setup_fps))
         .add_systems(Update, (camera_system, fps_system))
@@ -84,18 +87,27 @@ fn main() {
         .add_systems(
             Update,
             (
+                receive_message_system,
+                result_text_system,
+                handle_sync_field_change,
+                handle_state_change,
+            )
+                .run_if(in_state(AppState::Playing).or_else(in_state(AppState::Finished))),
+        )
+        .add_systems(
+            Update,
+            (
                 drop_timer_system,
                 lock_down_timer_system,
                 target_change_timer_system,
                 keyboard_input_system,
-                receive_message_system,
                 garbage_warning_bar_system,
                 handle_move,
                 handle_place_mino,
                 handle_spawn_mino.after(handle_place_mino),
                 handle_hold,
                 handle_receive_garbage,
-                handle_sync_field_change,
+                handle_gameover,
             )
                 .run_if(in_state(AppState::Playing)),
         )

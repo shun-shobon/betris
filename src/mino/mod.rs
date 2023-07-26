@@ -28,8 +28,8 @@ pub enum Angle {
 }
 
 impl Mino {
-    pub fn new(shape: Shape, field: &Field) -> Result<Self, ()> {
-        let pos = (0..=2)
+    pub fn new(shape: Shape, field: &Field) -> Option<Self> {
+        (0..=2)
             .rev()
             .map(|offset_y| {
                 pos!(
@@ -37,17 +37,12 @@ impl Mino {
                     FIELD_HEIGHT - offset_y - shape.offset_y(),
                 )
             })
-            .find(|&pos| field.blocks.can_place_mino(pos, shape, Angle::default()));
-
-        if let Some(pos) = pos {
-            Ok(Self {
+            .find(|&pos| field.blocks.can_place_mino(pos, shape, Angle::default()))
+            .map(|pos| Self {
                 pos,
                 angle: Angle::default(),
                 shape,
             })
-        } else {
-            Err(())
-        }
     }
 
     pub fn spawn(self, commands: &mut Commands) -> Entity {

@@ -90,7 +90,12 @@ impl Blocks {
         }
     }
 
-    pub fn add_garbages(&mut self, garbages: &Garbages) {
+    #[allow(clippy::result_unit_err)]
+    pub fn add_garbages(&mut self, garbages: &Garbages) -> Result<(), ()> {
+        if self.is_gameorver(garbages) {
+            return Err(());
+        }
+
         for y in (0..(FIELD_MAX_HEIGHT as usize - 1 - garbages.len())).rev() {
             self.0[y + garbages.len()] = self.0[y];
         }
@@ -104,9 +109,11 @@ impl Blocks {
                 };
             }
         }
+
+        Ok(())
     }
 
-    pub fn is_gameorver(&self, garbages: &Garbages) -> bool {
+    fn is_gameorver(&self, garbages: &Garbages) -> bool {
         !self.0[(FIELD_MAX_HEIGHT as usize - garbages.len())..(FIELD_MAX_HEIGHT as usize)]
             .iter()
             .all(|line| line.iter().all(Block::is_empty))

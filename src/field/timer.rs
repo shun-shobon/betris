@@ -2,9 +2,10 @@ use crate::{
     field::{local::LocalField, Field},
     mino::{event::PlaceMinoEvent, Mino},
     movement::{Direction, MoveEvent},
-    net::Players,
+    net::{PlayerState, Players},
 };
 use bevy::prelude::*;
+use if_chain::if_chain;
 use std::time::Duration;
 
 pub const DROP_INTERVAL: Duration = Duration::from_millis(1000);
@@ -79,18 +80,18 @@ pub fn target_change_timer_system(
     let Ok(mut target_change_timer) = target_change_timer_query.get_single_mut() else { return; };
 
     if target_change_timer.0.tick(time.delta()).just_finished() {
-        let next_target_player_id = if let Some(target_player_id) = local_field.target_player_id {
-            let target_player_idx = players
-                .0
+        local_field.target_player_id = if_chain! {
+            if let Some(target_id) = local_field.target_player_id;
+            if let Some(target) = players.0
                 .iter()
-                .position(|player_id| *player_id == target_player_id)
-                .unwrap();
-            let next_target_player_idx = (target_player_idx + 1) % players.0.len();
-            Some(players.0[next_target_player_idx])
-        } else {
-            players.0.first().copied()
+                .filter(|player| player.state == PlayerState::Playing)
+                .skip_while(|player| player.id != target_id)
+                .nth(1);
+            then {
+                Some(target.id)
+            } else {
+                players.0.iter().find(|player| player.state == PlayerState::Playing).map(|player| player.id)
+            }
         };
-
-        local_field.target_player_id = next_target_player_id;
     }
 }
