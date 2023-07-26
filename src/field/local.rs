@@ -2,7 +2,7 @@ use super::{
     block::BLOCK_SIZE,
     next::NextQueue,
     timer::{DropTimer, LockDownTimer, TargetChangeTimer},
-    FIELD_PIXEL_WIDTH,
+    FIELD_PIXEL_HEIGHT, FIELD_PIXEL_WIDTH,
 };
 use crate::{
     mino::{event::SpawnMinoEvent, shape::Shape, t_spin::TSpin, Mino},
@@ -15,7 +15,7 @@ static GARBAGE_WARN_BAR_WIDTH: f32 = 20.0;
 static GARBAGE_WARN_BAR_INSET: f32 = 4.0;
 static GARBAGE_WARN_BAR_START_X: f32 =
     -FIELD_PIXEL_WIDTH / 2.0 - GARBAGE_WARN_BAR_WIDTH / 2.0 - GARBAGE_WARN_BAR_INSET;
-static GARBAGE_WARN_BAR_START_Y: f32 = -FIELD_PIXEL_WIDTH / 2.0;
+static GARBAGE_WARN_BAR_START_Y: f32 = -FIELD_PIXEL_HEIGHT / 2.0;
 
 #[derive(Debug, Event)]
 pub struct ReceiveGarbageEvent(pub u8);
