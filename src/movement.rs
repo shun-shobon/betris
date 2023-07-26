@@ -6,7 +6,7 @@ use crate::{
         timer::{DropTimer, LockDownTimer, DROP_INTERVAL, SOFT_DROP_INTERVAL},
         Field,
     },
-    mino::{shape::Shape, t_spin::TSpin, Angle, Mino},
+    mino::{event::PlaceMinoEvent, shape::Shape, t_spin::TSpin, Angle, Mino},
     pos,
     position::Position,
 };
@@ -15,6 +15,7 @@ use crate::{
 pub enum MoveEvent {
     Move(Direction),
     Rotate(Direction),
+    HardDrop,
     StartSoftDrop,
     StopSoftDrop,
 }
@@ -43,6 +44,7 @@ pub fn handle_move(
         (&Field, &mut LocalField, &mut DropTimer, &mut LockDownTimer),
         With<Field>,
     >,
+    mut place_mino_events: EventWriter<PlaceMinoEvent>,
 ) {
     for event in move_events.iter() {
         match event {
@@ -80,6 +82,23 @@ pub fn handle_move(
                     local_field.t_spin.update(&mino, field, delta);
                     lock_down_timer.0.reset();
                 }
+            }
+            MoveEvent::HardDrop => {
+                let Ok(mut mino) = mino_query.get_single_mut() else { continue; };
+                let Ok((field, _, _, mut lock_down_timer)) = field_query.get_single_mut() else { continue; };
+
+                let mut delta = pos!(0, 0);
+                while field.blocks.can_place_mino(
+                    mino.pos + delta + pos!(0, -1),
+                    mino.shape,
+                    mino.angle,
+                ) {
+                    delta += pos!(0, -1);
+                }
+
+                mino.pos += delta;
+                lock_down_timer.0.reset();
+                place_mino_events.send(PlaceMinoEvent);
             }
             MoveEvent::StartSoftDrop => {
                 let Ok((_, _, mut drop_timer, _)) = field_query.get_single_mut() else { continue; };

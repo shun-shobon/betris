@@ -62,6 +62,9 @@ pub fn keyboard_input_system(
         move_event_writer.send(MoveEvent::Rotate(Direction::Right));
     }
 
+    if keyboard_input.just_pressed(KeyCode::Up) {
+        move_event_writer.send(MoveEvent::HardDrop);
+    }
     if keyboard_input.just_pressed(KeyCode::Down) {
         move_event_writer.send(MoveEvent::StartSoftDrop);
     } else if keyboard_input.just_released(KeyCode::Down) {

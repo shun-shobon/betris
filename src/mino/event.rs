@@ -22,7 +22,7 @@ pub struct SyncFieldChangeEvent {
 }
 
 #[derive(Event)]
-pub struct PlaceMinoEvent(pub Mino);
+pub struct PlaceMinoEvent;
 
 pub fn handle_spawn_mino(
     mut commands: Commands,
@@ -55,13 +55,18 @@ pub fn handle_sync_field_change(
 }
 
 pub fn handle_place_mino(
+    mut commands: Commands,
     mut events: EventReader<PlaceMinoEvent>,
     mut socket: ResMut<Socket>,
     players: Res<Players>,
     mut field_query: Query<(&mut Field, &mut LocalField)>,
+    mino_query: Query<(Entity, &Mino)>,
+    mut spawn_mino_events: EventWriter<SpawnMinoEvent>,
 ) {
-    for PlaceMinoEvent(mino) in events.iter() {
+    for _ in events.iter() {
         let Ok((mut field, mut local_field)) = field_query.get_single_mut() else { continue; };
+        let Ok((mino_entity, mino)) = mino_query.get_single() else { continue; };
+        commands.entity(mino_entity).despawn_recursive();
 
         field.blocks.place_mino(mino);
 
@@ -88,6 +93,9 @@ pub fn handle_place_mino(
         let garbage_lines = Garbages::from_amount(local_field.garbage_amount);
         local_field.garbage_amount = 0;
         field.blocks.add_garbages(&garbage_lines);
+
+        local_field.is_hold_used = false;
+        spawn_mino_events.send(SpawnMinoEvent(local_field.next_queue.pop()));
 
         // フィールドの状態の変更を通知
         sync_local_field_change(&mut socket, &players, *mino, clear_lines, garbage_lines);
