@@ -13,6 +13,7 @@ pub mod mino;
 pub mod movement;
 pub mod net;
 pub mod position;
+pub mod state;
 
 use bevy::{
     diagnostic::FrameTimeDiagnosticsPlugin,
@@ -38,17 +39,11 @@ use mino::event::{
 };
 use movement::{handle_move, MoveEvent};
 use net::{receive_message_system, setup_matchbox_socket, waiting_for_player_system};
+use state::AppState;
 
 const WINDOW_WIDTH: f32 = 1280.0;
 const WINDOW_HEIGHT: f32 = 720.0;
 const WINDOW_ASPECT: f32 = WINDOW_WIDTH / WINDOW_HEIGHT;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, States)]
-pub enum AppState {
-    #[default]
-    MatchMaking,
-    Playing,
-}
 
 fn main() {
     App::new()
