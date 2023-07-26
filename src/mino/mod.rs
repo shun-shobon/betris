@@ -4,7 +4,7 @@ pub mod t_spin;
 
 use self::shape::Shape;
 use crate::{
-    field::{FIELD_HEIGHT, FIELD_WIDTH},
+    field::{Field, FIELD_HEIGHT, FIELD_WIDTH},
     pos,
     position::Position,
 };
@@ -28,19 +28,36 @@ pub enum Angle {
 }
 
 impl Mino {
-    pub fn new(shape: Shape) -> Self {
-        Self {
-            pos: pos!(
-                (FIELD_WIDTH - shape.width()) / 2,
-                FIELD_HEIGHT - 2 - shape.spawn_y_offset(), // TODO: 20行目が埋まっている場合は21行目に出現させる
-            ),
-            angle: Angle::default(),
-            shape,
+    pub fn new(shape: Shape, field: &Field) -> Result<Self, ()> {
+        let pos = (0..=2)
+            .rev()
+            .map(|offset_y| {
+                pos!(
+                    (FIELD_WIDTH - shape.width()) / 2,
+                    FIELD_HEIGHT - offset_y - shape.offset_y(),
+                )
+            })
+            .find(|&pos| field.blocks.can_place_mino(pos, shape, Angle::default()));
+
+        if let Some(pos) = pos {
+            Ok(Self {
+                pos,
+                angle: Angle::default(),
+                shape,
+            })
+        } else {
+            Err(())
         }
     }
 
     pub fn spawn(self, commands: &mut Commands) -> Entity {
         commands.spawn((SpatialBundle::default(), self)).id()
+    }
+
+    pub fn is_landed(&self, field: &Field) -> bool {
+        !field
+            .blocks
+            .can_place_mino(self.pos + pos!(0, -1), self.shape, self.angle)
     }
 }
 

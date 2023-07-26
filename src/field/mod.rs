@@ -86,8 +86,7 @@ pub fn next_hold_block_system(
             let base = next_pos(i);
 
             for &pos in shape.blocks(Angle::default()) {
-                let translation =
-                    base + pos_to_translation(pos, shape.spawn_y_offset(), shape.width());
+                let translation = base + pos_to_translation(pos, shape.offset_y(), shape.width());
 
                 let bundle = create_next_hold_block_bundle(translation, shape.color());
                 parent.spawn(bundle);
@@ -98,8 +97,7 @@ pub fn next_hold_block_system(
             let base = Vec3::new(HOLD_START_X, NEXT_HOLD_BG_START_Y, 0.0);
 
             for &pos in shape.blocks(Angle::default()) {
-                let translation =
-                    base + pos_to_translation(pos, shape.spawn_y_offset(), shape.width());
+                let translation = base + pos_to_translation(pos, shape.offset_y(), shape.width());
 
                 let bundle = create_next_hold_block_bundle(translation, shape.color());
                 parent.spawn(bundle);

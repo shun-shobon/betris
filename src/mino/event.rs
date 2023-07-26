@@ -27,14 +27,17 @@ pub struct PlaceMinoEvent(pub Mino);
 pub fn handle_spawn_mino(
     mut commands: Commands,
     mut events: EventReader<SpawnMinoEvent>,
-    mut field_query: Query<(Entity, &mut DropTimer), With<LocalField>>,
+    mut field_query: Query<(Entity, &Field, &mut DropTimer), With<LocalField>>,
 ) {
-    let Ok((field_entity, mut drop_timer)) = field_query.get_single_mut() else { return; };
+    let Ok((field_entity, field, mut drop_timer)) = field_query.get_single_mut() else { return; };
 
     for SpawnMinoEvent(shape) in events.iter() {
-        let mino_entity = Mino::new(*shape).spawn(&mut commands);
-        commands.entity(field_entity).add_child(mino_entity);
-        drop_timer.0.reset();
+        if let Ok(mino) = Mino::new(*shape, field) {
+            let mino_entity = mino.spawn(&mut commands);
+            commands.entity(field_entity).add_child(mino_entity);
+
+            drop_timer.0.reset();
+        }
     }
 }
 

@@ -91,7 +91,7 @@ pub fn handle_hold(
         }
         local_field.is_hold_used = true;
 
-        let (mino_entity, mino) = mino_query.get_single_mut().unwrap();
+        let Ok((mino_entity, mino)) = mino_query.get_single_mut() else { continue; };
         commands.entity(mino_entity).despawn_recursive();
         let next_shape = if let Some(shape) = local_field.hold {
             shape

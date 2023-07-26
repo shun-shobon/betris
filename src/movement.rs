@@ -48,60 +48,37 @@ pub fn handle_move(
         match event {
             MoveEvent::Move(direction) => {
                 let Ok(mut mino) = mino_query.get_single_mut() else { continue; };
-                let Ok((field, mut local_field, mut drop_timer, mut lock_down_timer)) = field_query.get_single_mut() else { continue; };
+                let Ok((field, mut local_field, _, mut lock_down_timer)) = field_query.get_single_mut() else { continue; };
 
-                let collision = is_collision(
-                    mino.shape.blocks(mino.angle),
-                    &mino.pos,
-                    direction.move_delta(),
-                    field,
-                );
-
-                if !collision {
+                if field.blocks.can_place_mino(
+                    mino.pos + direction.move_delta(),
+                    mino.shape,
+                    mino.angle,
+                ) {
                     mino.pos += direction.move_delta();
+
                     local_field.t_spin = TSpin::None;
                     lock_down_timer.0.reset();
-                    lock_down_timer.0.pause();
-                }
-
-                let is_landed = is_collision(
-                    mino.shape.blocks(mino.angle),
-                    &mino.pos,
-                    Direction::Down.move_delta(),
-                    field,
-                );
-                if is_landed {
-                    drop_timer.0.reset();
-                    lock_down_timer.0.unpause();
                 }
             }
             MoveEvent::Rotate(direction) => {
                 let Ok(mut mino) = mino_query.get_single_mut() else { continue; };
-                let Ok((field, mut local_field, mut drop_timer, mut lock_down_timer)) = field_query.get_single_mut() else { continue; };
+                let Ok((field, mut local_field, _, mut lock_down_timer)) = field_query.get_single_mut() else { continue; };
 
                 let new_angle = get_new_angle(mino.angle, *direction);
                 let deltas = get_srs_deltas(mino.angle, new_angle, mino.shape);
 
-                if let Some(&delta) = deltas.iter().find(|&delta| {
-                    !is_collision(mino.shape.blocks(new_angle), &mino.pos, *delta, field)
-                }) {
+                let delta = deltas.iter().find(|&&delta| {
+                    field
+                        .blocks
+                        .can_place_mino(mino.pos + delta, mino.shape, new_angle)
+                });
+                if let Some(&delta) = delta {
                     mino.pos += delta;
                     mino.angle = new_angle;
-                    lock_down_timer.0.reset();
-                    lock_down_timer.0.pause();
 
                     local_field.t_spin.update(&mino, field, delta);
-                }
-
-                let is_landed = is_collision(
-                    mino.shape.blocks(mino.angle),
-                    &mino.pos,
-                    Direction::Down.move_delta(),
-                    field,
-                );
-                if is_landed {
-                    drop_timer.0.reset();
-                    lock_down_timer.0.unpause();
+                    lock_down_timer.0.reset();
                 }
             }
             MoveEvent::StartSoftDrop => {
@@ -114,23 +91,6 @@ pub fn handle_move(
             }
         }
     }
-}
-
-fn is_collision(
-    mino_blocks: &[Position],
-    mino_pos: &Position,
-    delta: Position,
-    field: &Field,
-) -> bool {
-    mino_blocks
-        .iter()
-        .map(|&mino_block_pos| mino_block_pos + *mino_pos + delta)
-        .any(|pos| {
-            field
-                .blocks
-                .get(pos)
-                .map_or(true, |block| block.is_filled())
-        })
 }
 
 fn get_new_angle(angle: Angle, direction: Direction) -> Angle {

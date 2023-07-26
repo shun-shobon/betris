@@ -24,7 +24,7 @@ impl Shape {
             Self::O => 2,
         }
     }
-    pub fn spawn_y_offset(&self) -> i8 {
+    pub fn offset_y(&self) -> i8 {
         match self {
             Self::O => 0,
             Self::I => 2,

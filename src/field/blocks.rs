@@ -1,5 +1,9 @@
 use super::{block::Block, FIELD_MAX_HEIGHT, FIELD_WIDTH};
-use crate::{mino::Mino, pos, position::Position};
+use crate::{
+    mino::{shape::Shape, Angle, Mino},
+    pos,
+    position::Position,
+};
 use rand::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -37,6 +41,14 @@ impl Blocks {
         } else {
             None
         }
+    }
+
+    pub fn can_place_mino(&self, mino_pos: Position, shape: Shape, angle: Angle) -> bool {
+        shape
+            .blocks(angle)
+            .iter()
+            .map(|&pos| pos + mino_pos)
+            .all(|pos| self.get(pos).map_or(false, Block::is_empty))
     }
 
     pub fn place_mino(&mut self, mino: &Mino) {
