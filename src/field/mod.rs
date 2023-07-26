@@ -131,6 +131,7 @@ fn spawn_background(parent: &mut ChildBuilder) {
             parent.spawn(SpriteBundle {
                 transform: Transform::from_translation(pos!(x, y).translation()),
                 sprite: Sprite {
+                    anchor: Anchor::BottomLeft,
                     color: FIELD_BACKGROUND_COLOR,
                     custom_size: Some(Vec2::new(
                         BLOCK_SIZE - BLOCK_INSET,

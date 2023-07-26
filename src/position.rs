@@ -22,9 +22,9 @@ macro_rules! pos {
 impl Position {
     pub fn translation(self) -> Vec3 {
         Vec3::new(
-            (self.x as f32 - FIELD_WIDTH as f32 / 2.) * BLOCK_SIZE + BLOCK_SIZE / 2.,
-            (self.y as f32 - FIELD_HEIGHT as f32 / 2.) * BLOCK_SIZE + BLOCK_SIZE / 2.,
-            0.,
+            (self.x as f32 - FIELD_WIDTH as f32 / 2.) * BLOCK_SIZE,
+            (self.y as f32 - FIELD_HEIGHT as f32 / 2.) * BLOCK_SIZE,
+            0.0,
         )
     }
 }

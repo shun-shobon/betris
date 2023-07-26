@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, sprite::Anchor};
 
 use crate::{
     mino::{shape::Shape, Mino},
@@ -109,6 +109,7 @@ fn create_field_block_bundle(pos: Position, block: Block) -> (SpriteBundle, Bloc
     let bundle = SpriteBundle {
         transform: Transform::from_translation(pos.translation()),
         sprite: Sprite {
+            anchor: Anchor::BottomLeft,
             color: block.color(),
             custom_size: Some(Vec2::new(
                 BLOCK_SIZE - BLOCK_INSET,
