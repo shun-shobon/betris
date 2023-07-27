@@ -1,3 +1,4 @@
+pub mod args;
 #[warn(clippy::all, clippy::pedantic)]
 #[allow(
     clippy::must_use_candidate,
@@ -16,6 +17,7 @@ pub mod net;
 pub mod position;
 pub mod state;
 
+use args::Args;
 use bevy::{
     diagnostic::FrameTimeDiagnosticsPlugin,
     log::LogPlugin,
@@ -23,6 +25,7 @@ use bevy::{
     render::camera::ScalingMode,
     window::{WindowResized, WindowResolution},
 };
+use clap::Parser;
 use field::{
     block::field_block_system,
     local::{
@@ -47,8 +50,11 @@ const WINDOW_HEIGHT: f32 = 720.0;
 const WINDOW_ASPECT: f32 = WINDOW_WIDTH / WINDOW_HEIGHT;
 
 fn main() {
+    let args = Args::parse();
+
     App::new()
         .insert_resource(ClearColor(Color::BLACK))
+        .insert_resource(args)
         .add_plugins(
             DefaultPlugins
                 .set(LogPlugin {

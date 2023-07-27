@@ -1,4 +1,5 @@
 use crate::{
+    args::Args,
     field::{
         blocks::{Garbages, Lines},
         local::ReceiveGarbageEvent,
@@ -11,9 +12,6 @@ use crate::{
 use bevy::prelude::*;
 use bevy_matchbox::prelude::*;
 use serde::{Deserialize, Serialize};
-
-pub const NUM_PLAYERS: usize = 1;
-const SIGNALING_SERVER_URL: &str = "ws://127.0.0.1:3536";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct PlayerId(PeerId);
@@ -62,10 +60,10 @@ enum Message {
     },
 }
 
-pub fn setup_matchbox_socket(mut commands: Commands) {
-    let room_id = "tetris";
+pub fn setup_matchbox_socket(mut commands: Commands, args: Res<Args>) {
+    let room_id = "betris";
 
-    let room_url = format!("{}/{}?next={}", SIGNALING_SERVER_URL, room_id, NUM_PLAYERS);
+    let room_url = format!("{}/{}?next={}", args.matchbox, room_id, args.players);
     info!("Connecting to matchbox server: {}", room_url);
 
     let builer = WebRtcSocketBuilder::new(room_url).add_channel(ChannelConfig::reliable());
@@ -78,6 +76,7 @@ pub fn waiting_for_player_system(
     mut commands: Commands,
     mut socket: ResMut<Socket>,
     mut app_state: ResMut<NextState<AppState>>,
+    args: Res<Args>,
 ) {
     let Socket(socket) = &mut *socket;
 
@@ -93,8 +92,7 @@ pub fn waiting_for_player_system(
     }
 
     // 自分は数えないので，1つ減らす
-    #[allow(clippy::absurd_extreme_comparisons)]
-    if socket.connected_peers().count() < NUM_PLAYERS - 1 {
+    if socket.connected_peers().count() < args.players - 1 {
         return;
     }
 
