@@ -57,7 +57,7 @@ fn main() {
                 })
                 .set(WindowPlugin {
                     primary_window: Some(Window {
-                        title: "Tetris".into(),
+                        title: "Betris".into(),
                         resolution: WindowResolution::new(WINDOW_WIDTH, WINDOW_HEIGHT),
                         ..default()
                     }),
