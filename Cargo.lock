@@ -651,6 +651,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8c3c1a368f70d6cf7302d78f8f7093da241fb8e8807c05cc9e51a125895a6d5b"
 
 [[package]]
+name = "betris"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "bevy_matchbox",
+ "bincode",
+ "clap",
+ "if_chain",
+ "once_cell",
+ "rand",
+ "serde",
+]
+
+[[package]]
 name = "bevy"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4674,20 +4688,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "be55cf8942feac5c765c2c993422806843c9a9a45d4d5c407ad6dd2ea95eb9b6"
 dependencies = [
  "winapi-util",
-]
-
-[[package]]
-name = "tetris"
-version = "0.1.0"
-dependencies = [
- "bevy",
- "bevy_matchbox",
- "bincode",
- "clap",
- "if_chain",
- "once_cell",
- "rand",
- "serde",
 ]
 
 [[package]]
