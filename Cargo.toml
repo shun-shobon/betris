@@ -19,4 +19,4 @@ rand = "0.8.5"
 serde = { version = "1.0.186", features = ["derive"] }
 
 [dependencies.bevy]
-version = "0.11.2"
+version = "0.13.2"
