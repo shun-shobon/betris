@@ -32,8 +32,12 @@ pub fn setup_fps(mut commands: Commands) {
 }
 
 pub fn fps_system(diagnostic: Res<DiagnosticsStore>, mut query: Query<&mut Text, With<FpsText>>) {
-    let Some(fps) = diagnostic.get(FrameTimeDiagnosticsPlugin::FPS) else { return; };
-    let Ok(mut fps_text) = query.get_single_mut() else { return; };
+    let Some(fps) = diagnostic.get(FrameTimeDiagnosticsPlugin::FPS) else {
+        return;
+    };
+    let Ok(mut fps_text) = query.get_single_mut() else {
+        return;
+    };
 
     fps_text.sections[1].value = format!("{:.2}", fps.average().unwrap_or_default());
 }

@@ -45,7 +45,9 @@ pub fn drop_timer_system(
     mut drop_timer_query: Query<&mut DropTimer>,
     mut move_event_writer: EventWriter<MoveEvent>,
 ) {
-    let Ok(mut drop_timer) = drop_timer_query.get_single_mut() else { return; };
+    let Ok(mut drop_timer) = drop_timer_query.get_single_mut() else {
+        return;
+    };
     if drop_timer.0.tick(time.delta()).just_finished() {
         move_event_writer.send(MoveEvent::Move(Direction::Down));
     }
@@ -57,8 +59,12 @@ pub fn lock_down_timer_system(
     mino_query: Query<&Mino>,
     mut place_mino_event_writer: EventWriter<PlaceMinoEvent>,
 ) {
-    let Ok((field, mut lock_down_timer)) = field_query.get_single_mut() else { return; };
-    let Ok(mino) = mino_query.get_single() else { return; };
+    let Ok((field, mut lock_down_timer)) = field_query.get_single_mut() else {
+        return;
+    };
+    let Ok(mino) = mino_query.get_single() else {
+        return;
+    };
 
     if !mino.is_landed(field) {
         lock_down_timer.0.reset();
@@ -76,8 +82,12 @@ pub fn target_change_timer_system(
     mut field_query: Query<&mut LocalField, With<Field>>,
     mut target_change_timer_query: Query<&mut TargetChangeTimer>,
 ) {
-    let Ok(mut local_field) = field_query.get_single_mut() else { return; };
-    let Ok(mut target_change_timer) = target_change_timer_query.get_single_mut() else { return; };
+    let Ok(mut local_field) = field_query.get_single_mut() else {
+        return;
+    };
+    let Ok(mut target_change_timer) = target_change_timer_query.get_single_mut() else {
+        return;
+    };
 
     if target_change_timer.0.tick(time.delta()).just_finished() {
         local_field.target_player_id = if_chain! {
