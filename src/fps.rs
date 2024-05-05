@@ -32,7 +32,7 @@ pub fn setup_fps(mut commands: Commands) {
 }
 
 pub fn fps_system(diagnostic: Res<DiagnosticsStore>, mut query: Query<&mut Text, With<FpsText>>) {
-    let Some(fps) = diagnostic.get(FrameTimeDiagnosticsPlugin::FPS) else {
+    let Some(fps) = diagnostic.get(&FrameTimeDiagnosticsPlugin::FPS) else {
         return;
     };
     let Ok(mut fps_text) = query.get_single_mut() else {

@@ -58,6 +58,7 @@ fn main() {
         .add_plugins(
             DefaultPlugins
                 .set(LogPlugin {
+                    update_subscriber: None,
                     filter: "info,wgpu_core=warn,wgpu_hal=warn".into(),
                     level: bevy::log::Level::DEBUG,
                 })
@@ -71,7 +72,7 @@ fn main() {
                 }),
         )
         .add_plugins(FrameTimeDiagnosticsPlugin)
-        .add_state::<AppState>()
+        .init_state::<AppState>()
         .add_event::<SpawnMinoEvent>()
         .add_event::<PlaceMinoEvent>()
         .add_event::<MoveEvent>()

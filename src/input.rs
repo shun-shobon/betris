@@ -23,19 +23,19 @@ impl Default for KeyboardRepeatTimer {
 }
 
 pub fn keyboard_input_system(
-    keyboard_input: Res<Input<KeyCode>>,
+    keyboard_input: Res<ButtonInput<KeyCode>>,
     time: Res<Time>,
     mut repeat_timer: ResMut<KeyboardRepeatTimer>,
     mut move_event_writer: EventWriter<MoveEvent>,
     mut hold_event_writer: EventWriter<HoldEvent>,
 ) {
-    if keyboard_input.just_pressed(KeyCode::Left) {
+    if keyboard_input.just_pressed(KeyCode::ArrowLeft) {
         repeat_timer.0.set_duration(MOVE_REPLEAT_DELAY);
         repeat_timer.0.reset();
 
         move_event_writer.send(MoveEvent::Move(Direction::Left));
     }
-    if keyboard_input.just_pressed(KeyCode::Right) {
+    if keyboard_input.just_pressed(KeyCode::ArrowRight) {
         repeat_timer.0.set_duration(MOVE_REPLEAT_DELAY);
         repeat_timer.0.reset();
 
@@ -48,26 +48,26 @@ pub fn keyboard_input_system(
         repeat_timer.0.set_duration(MOVE_REPLEAT_INTERVAL);
         repeat_timer.0.reset();
 
-        if keyboard_input.pressed(KeyCode::Left) {
+        if keyboard_input.pressed(KeyCode::ArrowLeft) {
             move_event_writer.send(MoveEvent::Move(Direction::Left));
         }
-        if keyboard_input.pressed(KeyCode::Right) {
+        if keyboard_input.pressed(KeyCode::ArrowRight) {
             move_event_writer.send(MoveEvent::Move(Direction::Right));
         }
     }
 
-    if keyboard_input.just_pressed(KeyCode::Z) {
+    if keyboard_input.just_pressed(KeyCode::KeyZ) {
         move_event_writer.send(MoveEvent::Rotate(Direction::Left));
-    } else if keyboard_input.just_pressed(KeyCode::X) {
+    } else if keyboard_input.just_pressed(KeyCode::KeyX) {
         move_event_writer.send(MoveEvent::Rotate(Direction::Right));
     }
 
-    if keyboard_input.just_pressed(KeyCode::Up) {
+    if keyboard_input.just_pressed(KeyCode::ArrowUp) {
         move_event_writer.send(MoveEvent::HardDrop);
     }
-    if keyboard_input.just_pressed(KeyCode::Down) {
+    if keyboard_input.just_pressed(KeyCode::ArrowDown) {
         move_event_writer.send(MoveEvent::StartSoftDrop);
-    } else if keyboard_input.just_released(KeyCode::Down) {
+    } else if keyboard_input.just_released(KeyCode::ArrowDown) {
         move_event_writer.send(MoveEvent::StopSoftDrop);
     }
 
