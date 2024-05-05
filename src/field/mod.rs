@@ -78,8 +78,10 @@ pub fn result_text_system(
     field_query: Query<&Field>,
     mut result_text_query: Query<(&mut Text, &Parent), With<ResultText>>,
 ) {
-    for (mut text, parent) in result_text_query.iter_mut() {
-        let Ok(field) = field_query.get(parent.get()) else { continue; };
+    for (mut text, parent) in &mut result_text_query {
+        let Ok(field) = field_query.get(parent.get()) else {
+            continue;
+        };
 
         match field.player.state {
             PlayerState::Playing => {

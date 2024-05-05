@@ -137,9 +137,13 @@ fn camera_system(
     window_query: Query<&Window>,
     mut projection_query: Query<&mut OrthographicProjection, With<Camera>>,
 ) {
-    for _ in resize_events.iter() {
-        let Ok(window) = window_query.get_single() else { return; };
-        let Ok(mut projection) = projection_query.get_single_mut() else { return; };
+    for _ in resize_events.read() {
+        let Ok(window) = window_query.get_single() else {
+            return;
+        };
+        let Ok(mut projection) = projection_query.get_single_mut() else {
+            return;
+        };
 
         let window_aspect = window.width() / window.height();
         if window_aspect > WINDOW_ASPECT {
@@ -154,6 +158,8 @@ fn setup_game(
     mut field_query: Query<&mut LocalField>,
     mut spawn_mino_events: EventWriter<SpawnMinoEvent>,
 ) {
-    let Ok(mut field) = field_query.get_single_mut() else { return; };
+    let Ok(mut field) = field_query.get_single_mut() else {
+        return;
+    };
     spawn_mino_events.send(SpawnMinoEvent(field.next_queue.pop()));
 }

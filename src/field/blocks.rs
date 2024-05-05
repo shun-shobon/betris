@@ -52,7 +52,7 @@ impl Blocks {
     }
 
     pub fn place_mino(&mut self, mino: &Mino) {
-        for &block_pos in mino.shape.blocks(mino.angle).iter() {
+        for &block_pos in mino.shape.blocks(mino.angle) {
             let pos = block_pos + mino.pos;
 
             let block = self.get_mut(pos).unwrap();

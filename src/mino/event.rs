@@ -31,9 +31,11 @@ pub fn handle_spawn_mino(
     mut field_query: Query<(Entity, &Field, &mut DropTimer), With<LocalField>>,
     mut gameover_events: EventWriter<GameOverEvent>,
 ) {
-    let Ok((field_entity, field, mut drop_timer)) = field_query.get_single_mut() else { return; };
+    let Ok((field_entity, field, mut drop_timer)) = field_query.get_single_mut() else {
+        return;
+    };
 
-    for SpawnMinoEvent(shape) in events.iter() {
+    for SpawnMinoEvent(shape) in events.read() {
         if let Some(mino) = Mino::new(*shape, field) {
             let mino_entity = mino.spawn(&mut commands);
             commands.entity(field_entity).add_child(mino_entity);
@@ -49,8 +51,13 @@ pub fn handle_sync_field_change(
     mut events: EventReader<SyncFieldChangeEvent>,
     mut field_query: Query<&mut Field>,
 ) {
-    for event in events.iter() {
-        let Some(mut field) = field_query.iter_mut().find(|field| field.player.id == event.player_id) else { continue; };
+    for event in events.read() {
+        let Some(mut field) = field_query
+            .iter_mut()
+            .find(|field| field.player.id == event.player_id)
+        else {
+            continue;
+        };
 
         field.blocks.place_mino(&event.mino);
         field.blocks.clear_lines(&event.clear_lines);
@@ -69,9 +76,13 @@ pub fn handle_place_mino(
     mut spawn_mino_events: EventWriter<SpawnMinoEvent>,
     mut gameover_events: EventWriter<GameOverEvent>,
 ) {
-    for _ in events.iter() {
-        let Ok((mut field, mut local_field)) = field_query.get_single_mut() else { continue; };
-        let Ok((mino_entity, mino)) = mino_query.get_single() else { continue; };
+    for _ in events.read() {
+        let Ok((mut field, mut local_field)) = field_query.get_single_mut() else {
+            continue;
+        };
+        let Ok((mino_entity, mino)) = mino_query.get_single() else {
+            continue;
+        };
         commands.entity(mino_entity).despawn_recursive();
 
         field.blocks.place_mino(mino);

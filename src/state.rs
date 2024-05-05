@@ -29,10 +29,12 @@ pub fn handle_gameover(
     players: Res<Players>,
     mut field_query: Query<&mut Field, With<LocalField>>,
 ) {
-    if events.iter().next().is_none() {
+    if events.read().next().is_none() {
         return;
     }
-    let Ok(mut field) = field_query.get_single_mut() else { return; };
+    let Ok(mut field) = field_query.get_single_mut() else {
+        return;
+    };
 
     field.player.state = PlayerState::GameOver;
     broadcast_state(&mut socket, &players, PlayerState::GameOver);
@@ -48,7 +50,7 @@ pub fn handle_state_change(
     mut field_query: Query<&mut Field, Without<LocalField>>,
     mut my_field_query: Query<&mut Field, With<LocalField>>,
 ) {
-    for event in events.iter() {
+    for event in events.read() {
         if_chain! {
             if let Some(mut field) = field_query.iter_mut().find(|field| field.player.id == event.player_id);
             if let Some(player) = players.0.iter_mut().find(|player| player.id == event.player_id);
@@ -63,7 +65,9 @@ pub fn handle_state_change(
             .iter()
             .all(|player| player.state == PlayerState::GameOver)
         {
-            let Ok(mut my_field) = my_field_query.get_single_mut() else { return; };
+            let Ok(mut my_field) = my_field_query.get_single_mut() else {
+                return;
+            };
 
             my_field.player.state = PlayerState::Win;
             broadcast_state(&mut socket, &players, PlayerState::Win);

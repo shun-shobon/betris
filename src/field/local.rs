@@ -85,8 +85,10 @@ pub fn handle_receive_garbage(
     mut receive_garbage_events: EventReader<ReceiveGarbageEvent>,
     mut local_field_query: Query<&mut LocalField>,
 ) {
-    let Ok(mut local_field) = local_field_query.get_single_mut() else { return; };
-    for ReceiveGarbageEvent(lines) in receive_garbage_events.iter() {
+    let Ok(mut local_field) = local_field_query.get_single_mut() else {
+        return;
+    };
+    for ReceiveGarbageEvent(lines) in receive_garbage_events.read() {
         local_field.garbage_amount += lines;
     }
 }
@@ -98,14 +100,18 @@ pub fn handle_hold(
     mut mino_query: Query<(Entity, &Mino)>,
     mut spawn_mino_events: EventWriter<SpawnMinoEvent>,
 ) {
-    let Ok(mut local_field) = local_field_query.get_single_mut() else { return; };
-    for _ in events.iter() {
+    let Ok(mut local_field) = local_field_query.get_single_mut() else {
+        return;
+    };
+    for _ in events.read() {
         if local_field.is_hold_used {
             continue;
         }
         local_field.is_hold_used = true;
 
-        let Ok((mino_entity, mino)) = mino_query.get_single_mut() else { continue; };
+        let Ok((mino_entity, mino)) = mino_query.get_single_mut() else {
+            continue;
+        };
         commands.entity(mino_entity).despawn_recursive();
         let next_shape = if let Some(shape) = local_field.hold {
             shape
@@ -122,8 +128,12 @@ pub fn garbage_warning_bar_system(
     mut garbage_line_query: Query<(&mut Sprite, &mut Visibility), With<GarbageWarningBar>>,
     local_field_query: Query<&LocalField>,
 ) {
-    let Ok((mut sprite, mut visibility)) = garbage_line_query.get_single_mut() else { return; };
-    let Ok(local_field) = local_field_query.get_single() else { return; };
+    let Ok((mut sprite, mut visibility)) = garbage_line_query.get_single_mut() else {
+        return;
+    };
+    let Ok(local_field) = local_field_query.get_single() else {
+        return;
+    };
 
     *visibility = if local_field.garbage_amount == 0 {
         Visibility::Hidden
@@ -146,7 +156,9 @@ pub fn next_hold_block_system(
         commands.entity(entity).despawn_recursive();
     }
 
-    let Ok((field_entity, field)) = field_query.get_single() else { return; };
+    let Ok((field_entity, field)) = field_query.get_single() else {
+        return;
+    };
     commands.entity(field_entity).with_children(|parent| {
         for (i, shape) in field.next_queue.queue().iter().enumerate() {
             let base = next_pos(i);

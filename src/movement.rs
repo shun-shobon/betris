@@ -46,11 +46,17 @@ pub fn handle_move(
     >,
     mut place_mino_events: EventWriter<PlaceMinoEvent>,
 ) {
-    for event in move_events.iter() {
+    for event in move_events.read() {
         match event {
             MoveEvent::Move(direction) => {
-                let Ok(mut mino) = mino_query.get_single_mut() else { continue; };
-                let Ok((field, mut local_field, _, mut lock_down_timer)) = field_query.get_single_mut() else { continue; };
+                let Ok(mut mino) = mino_query.get_single_mut() else {
+                    continue;
+                };
+                let Ok((field, mut local_field, _, mut lock_down_timer)) =
+                    field_query.get_single_mut()
+                else {
+                    continue;
+                };
 
                 if field.blocks.can_place_mino(
                     mino.pos + direction.move_delta(),
@@ -64,8 +70,14 @@ pub fn handle_move(
                 }
             }
             MoveEvent::Rotate(direction) => {
-                let Ok(mut mino) = mino_query.get_single_mut() else { continue; };
-                let Ok((field, mut local_field, _, mut lock_down_timer)) = field_query.get_single_mut() else { continue; };
+                let Ok(mut mino) = mino_query.get_single_mut() else {
+                    continue;
+                };
+                let Ok((field, mut local_field, _, mut lock_down_timer)) =
+                    field_query.get_single_mut()
+                else {
+                    continue;
+                };
 
                 let new_angle = get_new_angle(mino.angle, *direction);
                 let deltas = get_srs_deltas(mino.angle, new_angle, mino.shape);
@@ -84,8 +96,12 @@ pub fn handle_move(
                 }
             }
             MoveEvent::HardDrop => {
-                let Ok(mut mino) = mino_query.get_single_mut() else { continue; };
-                let Ok((field, _, _, mut lock_down_timer)) = field_query.get_single_mut() else { continue; };
+                let Ok(mut mino) = mino_query.get_single_mut() else {
+                    continue;
+                };
+                let Ok((field, _, _, mut lock_down_timer)) = field_query.get_single_mut() else {
+                    continue;
+                };
 
                 let mut delta = pos!(0, 0);
                 while field.blocks.can_place_mino(
@@ -101,11 +117,15 @@ pub fn handle_move(
                 place_mino_events.send(PlaceMinoEvent);
             }
             MoveEvent::StartSoftDrop => {
-                let Ok((_, _, mut drop_timer, _)) = field_query.get_single_mut() else { continue; };
+                let Ok((_, _, mut drop_timer, _)) = field_query.get_single_mut() else {
+                    continue;
+                };
                 drop_timer.0.set_duration(SOFT_DROP_INTERVAL);
             }
             MoveEvent::StopSoftDrop => {
-                let Ok((_, _, mut drop_timer, _)) = field_query.get_single_mut() else { continue; };
+                let Ok((_, _, mut drop_timer, _)) = field_query.get_single_mut() else {
+                    continue;
+                };
                 drop_timer.0.set_duration(DROP_INTERVAL);
             }
         }
